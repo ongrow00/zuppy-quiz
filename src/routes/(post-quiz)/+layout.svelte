@@ -36,12 +36,12 @@
 
 <div class="min-h-screen flex flex-col bg-bg">
 	<header class="bg-bg px-4 pt-4 pb-3 {!isResultsPage ? 'sticky top-0 z-10' : ''}">
-		<div class="flex items-center justify-between mb-3">
+		<div class="relative flex items-center justify-between mb-3">
 			{#if !hideNavOnThisPage && !isCarregandoPage}
 			<button
 				type="button"
 				onclick={() => goto(prevUrl)}
-				class="w-9 h-9 flex items-center justify-center text-heading rounded-xl transition-colors hover:bg-surface-2 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+				class="w-9 h-9 flex items-center justify-center text-heading rounded-xl transition-colors hover:bg-surface-2 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent shrink-0"
 				aria-label="Voltar"
 			>
 				<svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -58,11 +58,13 @@
 			<div class="w-9 h-9 shrink-0" aria-hidden="true"></div>
 			{/if}
 
-			<Logo />
+			<div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+				<Logo />
+			</div>
 
 			{#if !hideNavOnThisPage && !isCarregandoPage}
 				<div
-					class="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-line bg-transparent"
+					class="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-line bg-transparent shrink-0"
 					aria-label="Contagem"
 				>
 					<svg width="18" height="18" viewBox="0 0 24 24" fill="none" class="text-accent shrink-0" aria-hidden="true">

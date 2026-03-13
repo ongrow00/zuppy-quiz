@@ -87,13 +87,13 @@
 
 <!-- DOM order: header (0), main (1), spacer (2), slot content (3) so quiz content div is 4th child of root -->
 <header class="sticky top-0 z-10 bg-bg px-4 pt-4 pb-3">
-	<!-- Row 1: Back ← | Logo | Contagem (oculta na mr-1; na mr-1 vai para o conteúdo) -->
-	<div class="flex items-center justify-between mb-3">
+	<!-- Row 1: Back ← | Logo (centralizada na tela) | Contagem -->
+	<div class="relative flex items-center justify-between mb-3">
 		{#if !isMr5Screen}
 			<button
 				onclick={handleBack}
 				disabled={navigating.from != null || goingBack}
-				class="w-9 h-9 flex items-center justify-center text-heading rounded-xl transition-colors hover:bg-surface-2 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-40 disabled:pointer-events-none"
+				class="w-9 h-9 flex items-center justify-center text-heading rounded-xl transition-colors hover:bg-surface-2 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-40 disabled:pointer-events-none shrink-0"
 				aria-label="Voltar"
 			>
 				<svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -101,14 +101,16 @@
 				</svg>
 			</button>
 		{:else}
-			<div class="w-9 h-9" aria-hidden="true"></div>
+			<div class="w-9 h-9 shrink-0" aria-hidden="true"></div>
 		{/if}
 
-		<Logo />
+		<div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+			<Logo />
+		</div>
 
 		{#if !isMr1Screen && !isMr2Screen && !isMr3Screen && !isMr5Screen}
 			<div
-				class="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-line bg-transparent"
+				class="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-line bg-transparent shrink-0"
 				aria-label="Contagem"
 			>
 				<svg width="18" height="18" viewBox="0 0 24 24" fill="none" class="text-accent shrink-0" aria-hidden="true">
@@ -132,7 +134,7 @@
 				</span>
 			</div>
 		{:else}
-			<div class="w-[59px]" aria-hidden="true"></div>
+			<div class="w-[59px] shrink-0" aria-hidden="true"></div>
 		{/if}
 	</div>
 
