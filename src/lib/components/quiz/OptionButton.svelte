@@ -45,15 +45,15 @@
 		{horizontal && !imageOnTop ? 'items-center justify-center py-4' : ''}
 		{minimal ? 'border-0 rounded-xl bg-surface-2/50 py-3' : 'border-2'}
 		{selected
-		? minimal ? 'bg-accent text-bg' : 'border-accent bg-accent text-bg'
+		? minimal ? 'bg-accent text-on-primary' : 'border-accent bg-accent text-on-primary'
 		: minimal ? 'bg-surface-2/50 text-body hover:bg-surface-2' : 'border-line bg-surface text-body hover:border-accent/50 hover:bg-surface-2'}
 		{disabled ? ' opacity-50 pointer-events-none' : ''}"
 >
 	{#if imageOnTop}
 		<!-- Imagem 100% da largura, altura proporcional -->
 		<img src={option.imageUrl} alt="" class="w-full h-auto object-cover shrink-0" loading="lazy" />
-		<div class="flex items-center justify-center gap-3 px-3 py-3 min-h-[48px]">
-			<span class="font-medium leading-snug text-center">{title}</span>
+		<div class="flex items-center justify-center gap-3 px-3 py-3 min-h-[48px] min-w-0 overflow-hidden">
+			<span class="font-medium leading-snug text-center break-words">{title}</span>
 		</div>
 	{:else if stacked && isCheckbox}
 		<div class="flex flex-col items-center justify-center gap-2">
@@ -62,12 +62,12 @@
 					{selected ? 'border-bg' : 'border-line'}"
 			>
 				{#if selected}
-					<svg class="w-3 h-3 text-bg" viewBox="0 0 12 12" fill="none">
+					<svg class="w-3 h-3 text-on-primary" viewBox="0 0 12 12" fill="none">
 						<path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 					</svg>
 				{/if}
 			</span>
-			<span class="font-medium leading-snug text-center text-sm">{title}</span>
+			<span class="font-medium leading-snug text-center text-sm break-words">{title}</span>
 		</div>
 	{:else}
 		<div class="flex items-center gap-3">
@@ -77,16 +77,16 @@
 						{selected ? 'border-bg' : 'border-line'}"
 				>
 					{#if selected}
-						<svg class="w-3 h-3 text-bg" viewBox="0 0 12 12" fill="none">
+						<svg class="w-3 h-3 text-on-primary" viewBox="0 0 12 12" fill="none">
 							<path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 						</svg>
 					{/if}
 				</span>
 			{/if}
-			<div class="flex flex-col gap-0.5 min-w-0">
-				<span class="font-medium leading-snug">{title}</span>
+			<div class="flex flex-col gap-0.5 min-w-0 overflow-hidden">
+				<span class="font-medium leading-snug break-words">{title}</span>
 				{#if hasDescription}
-					<span class="text-sm opacity-90 leading-snug {selected ? 'text-bg/90' : 'text-muted'}">{description}</span>
+					<span class="text-sm opacity-90 leading-snug break-words {selected ? 'text-on-primary/90' : 'text-muted'}">{description}</span>
 				{/if}
 			</div>
 		</div>

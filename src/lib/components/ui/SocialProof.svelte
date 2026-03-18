@@ -2,36 +2,101 @@
 	import { onMount, onDestroy } from 'svelte';
 	import AvatarStack from '$lib/components/ui/AvatarStack.svelte';
 
-	const START = 2500;
-	const TARGET = 3000;
-	// +2 a cada ~3s com variação aleatória de ±0.5s
-	const DELAY_MIN = 2500;
-	const DELAY_MAX = 3500;
+	let count = $state(51);
 
-	let count = $state(START);
 	let timeout: ReturnType<typeof setTimeout>;
 
-	function tick() {
-		if (count >= TARGET) return;
-		count = Math.min(TARGET, count + 2);
-		timeout = setTimeout(tick, DELAY_MIN + Math.random() * (DELAY_MAX - DELAY_MIN));
+	const MAX_COUNT = 87;
+
+	function scheduleNext() {
+		if (count >= MAX_COUNT) return;
+		const delayMs = 3000 + Math.random() * 2000; // 3 a 5 segundos
+		timeout = setTimeout(() => {
+			count = Math.min(MAX_COUNT, count + 1);
+			scheduleNext();
+		}, delayMs);
 	}
 
 	onMount(() => {
-		timeout = setTimeout(tick, DELAY_MIN + Math.random() * (DELAY_MAX - DELAY_MIN));
+		count = Math.floor(51 + Math.random() * (75 - 51 + 1)); // 51 a 75
+		scheduleNext();
 	});
 
 	onDestroy(() => clearTimeout(timeout));
 </script>
 
-<div
-	class="inline-flex items-center gap-3 px-4 py-3 rounded-full border border-white/15 bg-transparent"
->
-	<!-- Apenas avatares sobrepostos, ordem randomizada a cada carregamento -->
-	<AvatarStack variant="default" />
+<style>
+	@property --border-angle {
+		syntax: '<angle>';
+		initial-value: 0deg;
+		inherits: false;
+	}
 
-	<!-- Texto alinhado à esquerda -->
-	<p class="text-xs text-body leading-snug text-left">
-		Mais de <strong class="text-heading font-bold">{count.toLocaleString('pt-BR')} pessoas</strong><br />já iniciaram seu protocolo.
-	</p>
+	@keyframes border-spin {
+		to { --border-angle: 360deg; }
+	}
+
+	.social-proof {
+		display: inline-flex;
+	}
+
+	.social-proof__wrapper {
+		position: relative;
+		padding: 2px;
+	}
+
+	.social-proof__glow-border {
+		position: absolute;
+		inset: 0;
+		border-radius: 9999px;
+		pointer-events: none;
+	}
+
+	.social-proof__glow-border::before {
+		content: '';
+		position: absolute;
+		inset: 0;
+		border-radius: 9999px;
+		padding: 2px;
+		background: conic-gradient(
+			from var(--border-angle),
+			transparent 0%,
+			transparent 75%,
+			rgba(100, 190, 20, 0.3) 82%,
+			#6ab820 87%,
+			#8ED33A 91%,
+			#B6E635 93%,
+			#8ED33A 95%,
+			#6ab820 97%,
+			transparent 100%
+		);
+		animation: border-spin 9s linear infinite;
+		-webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+		-webkit-mask-composite: xor;
+		mask-composite: exclude;
+	}
+
+	.social-proof__card {
+		display: inline-flex;
+		align-items: center;
+		gap: 12px;
+		padding: 12px 16px;
+		border-radius: 9999px;
+		background: transparent;
+		position: relative;
+		border: 1px solid var(--color-line, #e8e8e8);
+	}
+</style>
+
+<div class="social-proof">
+	<div class="social-proof__wrapper">
+		<div class="social-proof__glow-border" aria-hidden="true"></div>
+		<div class="social-proof__card">
+			<AvatarStack variant="default" />
+			<p class="text-xs text-body leading-none text-left">
+				<strong class="text-heading font-bold">{count} pessoas</strong> já iniciaram <strong class="text-heading font-bold">seu</strong><br />
+				<strong class="text-heading font-bold">plano</strong> nos últimos <strong class="text-heading font-bold">30 minutos</strong>.
+			</p>
+		</div>
+	</div>
 </div>

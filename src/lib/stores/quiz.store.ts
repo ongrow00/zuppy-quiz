@@ -5,7 +5,7 @@ import type { Answers, CategoryKey, Question, QuizState, Scores } from '$lib/dat
 import { computeVisibleQuestions } from '$lib/utils/branching';
 import { calculateScores } from '$lib/utils/scoring';
 
-const SESSION_KEY = 'lotz-quiz-state';
+const SESSION_KEY = 'zuppy-quiz-state';
 
 const INITIAL_SCORES: Scores = { A: 0, B: 0, C: 0, D: 0, E: 0, F: 0 };
 
@@ -113,36 +113,47 @@ export const currentIndex = derived(
 	([$quiz, $visible]): number => $visible.findIndex((q) => q.id === $quiz.currentQuestionId)
 );
 
-const MR_IDS = ['mr-1', 'mr-2', 'mr-3', 'mr-5'] as const;
+// 4 MRs em ordem de aparição no quiz → 4 segmentos → 4 checkpoints na barra
+const PROGRESS_MILESTONE_IDS = ['mr-1', 'mr-2', 'mr-3', 'mr-4'] as const;
+const TOTAL_SEGMENTS = 4;
 
 export const progressPercent = derived(
 	[currentIndex, visibleQuestions],
 	([$index, $visible]): number => {
 		if ($visible.length === 0 || $index < 0) return 0;
-		const mrIndices = MR_IDS.map((id) => $visible.findIndex((q) => q.id === id)).filter((i) => i >= 0);
-		if (mrIndices.length === 0) {
+
+		const milestoneIndices = PROGRESS_MILESTONE_IDS.map((id) =>
+			$visible.findIndex((q) => q.id === id)
+		);
+
+		// Fallback: sem milestones, progresso linear
+		if (milestoneIndices.every((i) => i < 0)) {
 			return Math.round((($index + 1) / $visible.length) * 100);
 		}
-		// When exactly on an MR screen, return the exact checkpoint % so the dot shows complete
+
+		// Na tela do MR: retorna exatamente o % do checkpoint correspondente
 		const currentId = $visible[$index]?.id;
-		const mrSegment = MR_IDS.findIndex((id) => id === currentId);
-		const totalSegments = 5; // 4 checkpoints (mr-1, mr-2, mr-3, mr-5) → 5 segments
-		if (mrSegment >= 0) {
-			return ((mrSegment + 1) / totalSegments) * 100;
+		const milestoneSegment = PROGRESS_MILESTONE_IDS.findIndex((id) => id === currentId);
+		if (milestoneSegment >= 0) {
+			return Math.round(((milestoneSegment + 1) / TOTAL_SEGMENTS) * 100);
 		}
-		// 5 segments: 0→MR-1, MR-1→MR-2, MR-2→MR-3, MR-3→MR-5, MR-5→end
-		let segment = 0;
-		if ($index <= mrIndices[0]) segment = 0;
-		else if (mrIndices[1] >= 0 && $index <= mrIndices[1]) segment = 1;
-		else if (mrIndices[2] >= 0 && $index <= mrIndices[2]) segment = 2;
-		else if (mrIndices[3] >= 0 && $index <= mrIndices[3]) segment = 3;
-		else segment = 4;
-		const segmentStart = segment === 0 ? 0 : mrIndices[segment - 1] + 1;
-		const segmentEnd = segment < 4 ? mrIndices[segment] : $visible.length - 1;
+
+		// Determina em qual segmento estamos
+		let segment = TOTAL_SEGMENTS - 1;
+		for (let s = 0; s < milestoneIndices.length; s++) {
+			if (milestoneIndices[s] >= 0 && $index <= milestoneIndices[s]) {
+				segment = s;
+				break;
+			}
+		}
+
+		const segmentStart = segment === 0 ? 0 : milestoneIndices[segment - 1] + 1;
+		const segmentEnd =
+			segment < milestoneIndices.length ? milestoneIndices[segment] : $visible.length - 1;
 		const segmentSize = segmentEnd - segmentStart;
 		const progressWithin = segmentSize > 0 ? ($index - segmentStart) / segmentSize : 1;
-		const percent = ((segment + progressWithin) / totalSegments) * 100;
-		return Math.min(100, percent);
+
+		return Math.min(100, Math.round(((segment + progressWithin) / TOTAL_SEGMENTS) * 100));
 	}
 );
 

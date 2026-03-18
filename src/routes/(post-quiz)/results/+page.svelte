@@ -1,54 +1,26 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { browser } from '$app/environment';
-	import { env } from '$env/dynamic/public';
 	import { quizStore } from '$lib/stores/quiz.store';
 	import { postQuizStore } from '$lib/stores/post-quiz.store';
-	import OfertaBeforeAfter from '$lib/components/oferta/OfertaBeforeAfter.svelte';
-	import WeightLossLineChart from '$lib/components/quiz/WeightLossLineChart.svelte';
+	import BodyBeforeAfterCard from '$lib/components/quiz/BodyBeforeAfterCard.svelte';
+	import NutritionPlanCard from '$lib/components/quiz/NutritionPlanCard.svelte';
 	import AvatarStack from '$lib/components/ui/AvatarStack.svelte';
-
-	const checkoutUrl = env.PUBLIC_CHECKOUT_URL ?? '';
+	import ResultsOffer from '$lib/components/result/ResultsOffer.svelte';
+	import { calculateCalorieProfile, estimateBodyFatPercent, bodyFatPercentFromStage } from '$lib/utils/calories';
+	import { BODY_FAT_LABELS } from '$lib/assets/body-fat-config';
+	import { getRemaining, formatCountdown, TOTAL_SECONDS } from '$lib/stores/discount-countdown.store';
 
 	const quiz = $derived($quizStore);
-	const name = $derived($postQuizStore.name);
+	const name = $derived(($postQuizStore.name || '').trim() || 'Você');
 
-	/** Iniciais do nome: "Maria Silva" → "MS", "Pedro" → "PE" */
-	const nameInitials = $derived.by(() => {
-		const n = (name || '').trim();
-		if (!n) return undefined;
-		const words = n.split(/\s+/).filter(Boolean);
-		if (words.length >= 2) {
-			return (words[0][0] + words[words.length - 1][0]).toUpperCase();
-		}
-		return n.slice(0, 2).toUpperCase() || undefined;
-	});
-
-	// Só permite acessar esta tela se o usuário tiver completado o quiz (respondeu às perguntas)
-	$effect(() => {
-		if (!browser) return;
-		const state = $quizStore;
-		const hasCompletedQuiz = state.completedAt != null;
-		if (!hasCompletedQuiz) {
-			goto('/', { replaceState: true });
-		}
-	});
-
-	const bodyFatLevel = $derived.by(() => {
-		const v = quiz.answers['body_fat_level'];
-		if (v == null) return null;
-		const n = typeof v === 'string' ? parseInt(v, 10) : Array.isArray(v) ? parseInt(String(v[0]), 10) : Number(v);
-		return Number.isFinite(n) ? Math.min(5, Math.max(0, n)) : null;
-	});
-	const bodyFatGoal = $derived.by(() => {
-		const v = quiz.answers['body_fat_goal'];
-		if (v == null) return null;
-		const n = typeof v === 'string' ? parseInt(v, 10) : Array.isArray(v) ? parseInt(String(v[0]), 10) : Number(v);
-		return Number.isFinite(n) ? Math.min(5, Math.max(0, n)) : null;
-	});
-	const genderAnswer = $derived(
-		typeof quiz.answers['gender'] === 'string' ? quiz.answers['gender'] : undefined
-	);
+	// Seletor de planos
+	const plans = [
+		{ id: 'mensal',    label: 'Plano Pro - Mensal',    oldPrice: 197, price: 117, monthly: 17,  badge: null },
+		{ id: 'semestral', label: 'Plano Pro - Semestral', oldPrice: 197, price: 117, monthly: 11,  badge: 'Mais Vendido' },
+		{ id: 'anual',     label: 'Plano Pro - Anual',     oldPrice: 197, price: 117, monthly: 8,   badge: null }
+	];
+	let selectedPlan = $state('semestral');
 
 	const currentKg = $derived.by(() => {
 		const raw = quiz.answers['weight_current_kg'];
@@ -56,616 +28,737 @@
 		const n = typeof raw === 'string' ? parseFloat(raw) : Array.isArray(raw) ? parseFloat(raw[0]) : NaN;
 		return Number.isFinite(n) ? Math.round(n) : null;
 	});
-
 	const goalKg = $derived.by(() => {
 		const raw = quiz.answers['weight_goal_kg'];
 		if (raw == null) return null;
 		const n = typeof raw === 'string' ? parseFloat(raw) : Array.isArray(raw) ? parseFloat(raw[0]) : NaN;
 		return Number.isFinite(n) ? Math.round(n) : null;
 	});
+	const kgDelta = $derived.by(() => {
+		if (currentKg == null || goalKg == null) return null;
+		return Math.abs(currentKg - goalKg);
+	});
+	const isMassGoal = $derived(quiz.answers['goal_type'] === 'goal-massa');
+	const actionVerb = $derived(isMassGoal ? 'ganhar massa' : 'emagrecer');
+	/** Rótulo do objetivo no bloco “O que está incluso” */
+	const planObjectiveLabel = $derived(isMassGoal ? 'ganhar massa' : 'emagrecer');
 
-	const eventTypeId = $derived(quiz.answers['event_type']);
-	const hasEvent = $derived(
-		typeof eventTypeId === 'string' && eventTypeId !== '' && eventTypeId !== 'event-nenhuma'
-	);
+	const initials = $derived.by(() => {
+		const parts = name.trim().split(/\s+/);
+		if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+		return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+	});
 
-	const EVENT_LABELS: Record<string, string> = {
-		'event-viagem': 'suas férias',
-		'event-casamento': 'o casamento',
-		'event-aniversario': 'seu aniversário',
-		'event-formatura': 'sua formatura',
-		'event-familia': 'a reunião de família',
-		'event-outro': 'seu evento'
-	};
-	const eventLabel = $derived(
-		typeof eventTypeId === 'string' ? EVENT_LABELS[eventTypeId] ?? 'seu evento' : null
-	);
+	const gender = $derived(quiz.answers['gender'] as string | undefined);
+	const sexo = $derived.by(() => (gender === 'gender-m' ? 'homem' : gender === 'gender-f' ? 'mulher' : ''));
+	const age = $derived.by(() => {
+		const raw = quiz.answers['age_years'];
+		if (raw == null) return '';
+		const n = typeof raw === 'string' ? parseInt(raw, 10) : Array.isArray(raw) ? parseInt(String(raw[0]), 10) : NaN;
+		return Number.isFinite(n) ? String(n) : '';
+	});
 
-	const rawEventDate = $derived(quiz.answers['event_date']);
+	// Melhorias Ativadas
+	const isGlp1 = $derived(quiz.answers['weight_medication_use'] === 'med-glp1');
+	const eventType = $derived(quiz.answers['event_type'] as string | undefined);
+	const hasEvent = $derived(!!eventType && eventType !== 'event-nenhuma');
+	const eventLabel = $derived.by(() => {
+		const map: Record<string, string> = {
+			'event-casamento':   'Casamento',
+			'event-viagem':      'Viagem',
+			'event-verao':       'Verão',
+			'event-aniversario': 'Aniversário',
+			'event-reencontro':  'Reencontro'
+		};
+		return map[eventType ?? ''] ?? 'evento';
+	});
 	const eventDateFormatted = $derived.by(() => {
-		const raw = typeof rawEventDate === 'string' ? rawEventDate : Array.isArray(rawEventDate) ? rawEventDate[0] : null;
-		if (!raw) return null;
-		const d = new Date(raw);
-		return Number.isFinite(d.getTime()) ? formatDate(d) : null;
-	});
-
-	const kgToLose = $derived.by(() => {
-		if (currentKg != null && goalKg != null && currentKg >= goalKg) return currentKg - goalKg;
-		return null;
-	});
-
-	/** Semanas estimadas para o gráfico (mesma lógica do micro-result mr-3) */
-	const weeksEstimate = $derived.by(() => {
-		if (currentKg == null || goalKg == null) return 12;
-		const kgToReach = Math.abs(goalKg - currentKg);
-		return kgToReach > 0 ? Math.ceil(kgToReach * 2) : 12;
-	});
-
-	const goalLabel = $derived(
-		quiz.answers['goal_type'] === 'goal-massa' ? 'ganhar massa' : 'emagrecer'
-	);
-
-	// Itens "Suas especificidades": só mostram se o usuário escolheu no quiz
-	const showAdaptacao = $derived.by(() => {
-		const v = quiz.answers['weight_medication_use'];
-		const val = Array.isArray(v) ? v[0] : v;
-		return val === 'med-sim' || val === 'med-interesse';
-	});
-	const showAerobico = $derived.by(() => {
-		const v = quiz.answers['cardio_enabled'];
-		const val = Array.isArray(v) ? v[0] : v;
-		return val === 'cardio-sim';
-	});
-	const hasAnyEspecificidade = $derived(
-		showAdaptacao || showAerobico || (hasEvent && !!eventLabel)
-	);
-
-	// Timeline: datas para hoje, dia 3 e dia 7 (dd/MM/yyyy)
-	const today = new Date();
-	function formatDate(d: Date) {
+		const raw = quiz.answers['event_date'];
+		const str = typeof raw === 'string' ? raw : Array.isArray(raw) ? raw[0] : null;
+		if (!str || !String(str).trim()) return null;
+		const d = new Date(String(str));
+		if (!Number.isFinite(d.getTime())) return null;
 		return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+	});
+	const hasMelhorias = $derived(isGlp1 || hasEvent);
+
+	/** Toggles “Melhorias Ativadas” (UI local) */
+	let melhoriaGlp1On = $state(true);
+	let melhoriaEventOn = $state(true);
+
+	/** Mini-gráfico “Gráficos de evolução”: 9 barras com flutuação dia a dia (último dia em destaque) */
+	const evolutionBarHeights = [0.52, 0.38, 0.62, 0.45, 0.7, 0.5, 0.68, 0.56, 1];
+
+	/** Barra de calorias no thumb (igual NutritionPlanCard — meta ~2.254, ~91% preenchido) */
+	const FEATURE_CAL_SEGMENTS = 10;
+	const featureCalFilled = Math.min(FEATURE_CAL_SEGMENTS, Math.round(0.91 * FEATURE_CAL_SEGMENTS));
+	function featureCalColorAt(ratio: number): string {
+		if (ratio <= 0.6) return '#8ED33A';
+		if (ratio <= 0.85) return '#B6E635';
+		if (ratio <= 1) return '#F4E84A';
+		if (ratio <= 1.15) return '#F7B23B';
+		if (ratio <= 1.3) return '#F47A3A';
+		return '#E84C3D';
 	}
-	const dateHoje = $derived(formatDate(today));
-	const dateDia3 = $derived(formatDate(new Date(today.getTime() + 3 * 24 * 60 * 60 * 1000)));
-	const dateDia7 = $derived(formatDate(new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)));
+	function featureCalRatio(i: number) {
+		return (i + 0.5) / FEATURE_CAL_SEGMENTS;
+	}
 
-	// Faixa: visível após 50px de scroll, fixa no topo, clique leva ao bloco de preço
-	let scrollY = $state(0);
-	const showFaixa = $derived(scrollY >= 50);
+	const bodyCurrentStage = $derived.by(() => {
+		const raw = quiz.answers['body_current'];
+		if (raw == null) return 3;
+		const n = typeof raw === 'string' ? parseInt(raw, 10) : NaN;
+		return Number.isFinite(n) ? Math.min(5, Math.max(0, n)) : 3;
+	});
 
-	// Código de desconto: # + 4 primeiras letras do nome + 3 dígitos aleatórios (estável na sessão)
-	let randomDigits = $state<number | null>(null);
+	const bodyGoalStage = $derived.by(() => {
+		const raw = quiz.answers['body_goal_visual'];
+		if (raw == null) return Math.max(0, bodyCurrentStage - 1);
+		const n = typeof raw === 'string' ? parseInt(raw, 10) : NaN;
+		return Number.isFinite(n) ? Math.min(5, Math.max(0, n)) : Math.max(0, bodyCurrentStage - 1);
+	});
+
+	const includeBreakfast = $derived(quiz.answers['include_breakfast'] === 'ib-sim');
+	const mealCount = $derived.by(() => {
+		const raw = quiz.answers['meal_count'] as string | undefined;
+		if (!raw) return 3;
+		const n = parseInt(raw.replace('mc-', ''), 10);
+		return Number.isFinite(n) ? n : 3;
+	});
+
+	const calorieProfile = $derived(calculateCalorieProfile(quiz.answers));
+	const currentBfPercent = $derived(estimateBodyFatPercent(quiz.answers));
+	const goalBfPercent = $derived(bodyFatPercentFromStage(bodyGoalStage, gender));
+
+	const steps = $derived([
+		{ title: 'Passo 1:', desc: null },
+		{ title: 'Passo 2:', desc: 'Registre suas refeições como preferir. Foto, áudio ou texto. Qualquer alimento, qualquer hora do dia.' },
+		{ title: 'Passo 3:', desc: 'Acompanhe tudo direto no WhatsApp. Calorias, macros e progresso atualizados em tempo real.' }
+	]);
+
 	$effect(() => {
-		if (typeof window !== 'undefined' && randomDigits === null) {
-			randomDigits = Math.floor(100 + Math.random() * 900); // 100..999
+		if (!browser) return;
+		if ($quizStore.completedAt == null) {
+			goto('/', { replaceState: true });
 		}
 	});
-	const discountCode = $derived.by(() => {
-		const four = (name || '').trim().slice(0, 4).toUpperCase().replace(/\s/g, '') || 'LOTZ';
-		const digits = randomDigits ?? 0;
-		return `#${four}${digits}`;
+
+	const ALL_TESTIMONIALS = [
+		{ user: 'ana_fitness',  prevKg: 98,  currKg: 75 },
+		{ user: 'marcos_s',     prevKg: 112, currKg: 89 },
+		{ user: 'julia_r',      prevKg: 78,  currKg: 61 },
+		{ user: 'roberto_m',    prevKg: 95,  currKg: 78 },
+		{ user: 'camila_t',     prevKg: 72,  currKg: 63 },
+		{ user: 'thiago_b',     prevKg: 88,  currKg: 76 },
+		{ user: 'patricia_m',   prevKg: 105, currKg: 87 },
+		{ user: 'gabriel_c',    prevKg: 130, currKg: 108 },
+	];
+	const testimonials = $derived.by(() => {
+		if (kgDelta == null || isMassGoal) return ALL_TESTIMONIALS.slice(0, 4);
+		return [...ALL_TESTIMONIALS]
+			.sort((a, b) => {
+				const da = Math.abs((a.prevKg - a.currKg) - kgDelta);
+				const db = Math.abs((b.prevKg - b.currKg) - kgDelta);
+				return da - db;
+			})
+			.slice(0, 4);
 	});
+	const appScreens: { src: string; label: number }[] = [
+		{ src: '/assets/zuppy-screen-8.png', label: 8 },
+		{ src: '/assets/zuppy-screen-1.png', label: 1 },
+		{ src: '/assets/zuppy-screen-2.png', label: 2 },
+		{ src: '/assets/zuppy-screen-3.png', label: 3 },
+		{ src: '/assets/zuppy-screen-4.png', label: 4 },
+		{ src: '/assets/zuppy-screen-5.png', label: 5 },
+		{ src: '/assets/zuppy-screen-6.png', label: 6 },
+		{ src: '/assets/zuppy-screen-7.png', label: 7 },
+	];
+	const faqs = $derived.by(() => {
+		const firstQ = isMassGoal
+			? { q: 'Como o Zuppy vai me ajudar a ganhar massa?', a: 'O Zuppy calcula exatamente o superávit calórico necessário para você ganhar músculo sem acumular gordura desnecessária. Você registra suas refeições pelo WhatsApp e ele garante que está batendo a proteína e as calorias certas todo dia.' }
+			: { q: 'Como o Zuppy vai me ajudar a emagrecer?', a: 'O Zuppy calcula exatamente quantas calorias você precisa consumir por dia para chegar no seu objetivo e te ajuda a manter esse controle de forma simples, direto no WhatsApp. Sem dieta maluca, sem passar fome.' };
+		return [
+			firstQ,
+			{ q: 'Preciso baixar algum aplicativo?', a: 'Não. O Zuppy funciona 100% pelo WhatsApp. Você conecta uma vez e pronto. Sem instalar nada, sem criar conta em plataforma nova.' },
+			{ q: 'Como funciona o registro de refeições na prática?', a: 'É só mandar uma mensagem. Foto do prato, áudio falando o que comeu, ou texto mesmo. O Zuppy identifica o alimento, calcula as calorias e atualiza seu saldo do dia na hora.' },
+			{ q: 'O plano é realmente personalizado ou é genérico?', a: `É personalizado com base nas suas respostas do quiz: peso, altura, rotina e objetivo. Não é uma dieta padrão. É o seu número — <strong class="text-nutrition-green">${calorieProfile.caloriasMeta.toLocaleString('pt-BR')} kcal/dia</strong>, calculado pro seu corpo.` },
+			{ q: 'E se eu não tiver tempo de registrar tudo?', a: 'Esse é exatamente o ponto. Registrar pelo WhatsApp leva menos de 10 segundos. Você manda uma foto e pronto. Sem planilha, sem app complicado.' },
+			{ q: 'Como acesso meu plano depois que ativar?', a: 'Assim que o pagamento for aprovado, você recebe um e-mail e uma mensagem no WhatsApp com todas as instruções para acessar seu plano e começar na hora.' },
+		];
+	});
+	let openFaq = $state<number | null>(null);
+	function toggleFaq(i: number) {
+		openFaq = openFaq === i ? null : i;
+	}
 
-	// Toggles dos itens (Adaptação, Aeróbico, Acelerador) — começam ativados
-	let toggleAdaptacao = $state(true);
-	let toggleAerobico = $state(true);
-	let toggleAcelerador = $state(true);
+	let appSliderEl = $state<HTMLDivElement | null>(null);
+	let activeAppSlide = $state(1);
+	let appSliderInitialScrollDone = false;
 
-	let countdownSeconds = $state(15 * 60 + 9); // 15:09
+	/** Cronômetro da oferta (mesmo do banner no topo). */
+	let countdownRemaining = $state(TOTAL_SECONDS);
 	$effect(() => {
-		if (typeof window === 'undefined') return;
-		const onScroll = () => { scrollY = window.scrollY };
-		window.addEventListener('scroll', onScroll, { passive: true });
-		onScroll();
-		return () => window.removeEventListener('scroll', onScroll);
+		const unsub = getRemaining().subscribe((v) => (countdownRemaining = v));
+		return unsub;
 	});
+	const countdownDisplay = $derived.by(() => formatCountdown(countdownRemaining));
+
+	/** Sempre abre o carrossel “Veja o Zuppy por dentro” no 2º slide */
 	$effect(() => {
-		if (typeof window === 'undefined' || !showFaixa) return;
-		const t = setInterval(() => {
-			const next = Math.max(0, countdownSeconds - 1);
-			countdownSeconds = next;
-		}, 1000);
-		return () => clearInterval(t);
-	});
-	const countdownDisplay = $derived.by(() => {
-		const m = Math.floor(countdownSeconds / 60);
-		const s = countdownSeconds % 60;
-		return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+		if (!browser || !appSliderEl || appSliderInitialScrollDone || appScreens.length < 2) return;
+		const el = appSliderEl;
+		const snapToSecond = () => {
+			const unit = el.scrollWidth / appScreens.length;
+			if (unit <= 0) {
+				requestAnimationFrame(snapToSecond);
+				return;
+			}
+			el.scrollTo({ left: unit, behavior: 'auto' });
+			activeAppSlide = 1;
+			appSliderInitialScrollDone = true;
+		};
+		requestAnimationFrame(() => requestAnimationFrame(snapToSecond));
 	});
 
-	function scrollToPreco() {
-		document.getElementById('bloco-preco')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+	function onAppSliderScroll() {
+		if (!appSliderEl) return;
+		const cardW = appSliderEl.scrollWidth / appScreens.length;
+		activeAppSlide = Math.round(appSliderEl.scrollLeft / cardW);
+	}
+	function goToAppSlide(i: number) {
+		if (!appSliderEl) return;
+		const cardW = appSliderEl.scrollWidth / appScreens.length;
+		appSliderEl.scrollTo({ left: i * cardW, behavior: 'smooth' });
+	}
+
+	let testimonialSliderEl = $state<HTMLDivElement | null>(null);
+	let activeTestimonial = $state(0);
+	function onTestimonialScroll() {
+		if (!testimonialSliderEl) return;
+		const cardW = testimonialSliderEl.scrollWidth / testimonials.length;
+		activeTestimonial = Math.round(testimonialSliderEl.scrollLeft / cardW);
+	}
+	function goToTestimonial(i: number) {
+		if (!testimonialSliderEl) return;
+		const cardW = testimonialSliderEl.scrollWidth / testimonials.length;
+		testimonialSliderEl.scrollTo({ left: i * cardW, behavior: 'smooth' });
 	}
 </script>
 
 <svelte:head>
-	<title>Seus Resultados | Lotz</title>
+	<title>Seus Resultados | Zuppy</title>
 </svelte:head>
 
-<div class="flex flex-col gap-8 w-full min-w-0 text-center">
-	<!-- Faixa fixa: desconto + countdown, aparece após 50px de scroll com transição suave; clique leva ao bloco de preço -->
-	<button
-		type="button"
-		onclick={scrollToPreco}
-		class="fixed left-0 right-0 top-0 z-20 flex w-full items-center justify-between gap-4 bg-[#212121] px-4 py-3 text-left transition-all duration-300 ease-out hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent {showFaixa
-			? 'translate-y-0 opacity-100'
-			: '-translate-y-full opacity-0 pointer-events-none'}"
-		aria-label="Ver oferta e preço"
-		aria-hidden={!showFaixa}
+<div class="flex flex-col items-center justify-center text-center pt-0 pb-8">
+	<h1
+		class="max-w-[22rem] text-2xl font-extrabold leading-[24px] tracking-tight text-heading sm:max-w-md sm:text-[1.65rem]"
 	>
-		<div class="flex flex-col gap-1">
-			<span class="text-xs font-normal text-white/80">Desconto aplicado</span>
-			<span class="inline-flex w-fit rounded-lg bg-[#3A3A3A] px-3 py-1.5 text-xs font-bold text-white">{discountCode}</span>
-		</div>
-		<div class="flex flex-col items-end gap-1">
-			<span class="text-xs font-normal text-white/80">Se encerra em</span>
-			<span class="text-lg font-bold tabular-nums text-red-500">{countdownDisplay}</span>
-		</div>
-	</button>
-
-	<h1 class="text-2xl font-extrabold text-heading leading-6">
-		Assista o video para entender como acessar seu protocolo para <span class="text-accent">emagrecer</span>.
+		<span class="text-nutrition-green">{name}</span>, seu plano personalizado para <span class="text-nutrition-green">{actionVerb}</span>
+		{#if !isMassGoal}
+			até
+			{#if kgDelta != null && kgDelta > 0}
+				<span class="text-nutrition-green">{kgDelta}kg</span>
+			{:else}
+				<span class="text-nutrition-green">…kg</span>
+			{/if}
+		{/if}
+		está pronto.
 	</h1>
-	<p class="text-sm text-body leading-[14px] max-w-md mx-auto">
-		Nesse video você vai entender como acessar o protocolo desenhado para você sair de
-		{#if currentKg != null}
-			<span class="text-accent font-bold">{currentKg}kg</span>
-		{:else}
-			<span class="text-accent">—</span>
-		{/if}
-		para
-		{#if goalKg != null}
-			<span class="text-accent font-bold">{goalKg}kg</span>
-		{:else}
-			<span class="text-accent">—</span>
-		{/if}
-		{#if hasEvent && eventLabel}
-			, e estar pronto para <span class="text-accent font-bold">{eventLabel}</span>
-		{/if}
-		.
+	<p class="mt-3 max-w-[22rem] text-sm text-muted leading-relaxed sm:max-w-md">
+		Agora você só precisa ativar para começar.
 	</p>
-	<img
-		src="/oferta-video-thumbnail.png"
-		alt="Assista o vídeo para acessar seu protocolo"
-		class="w-full max-w-md mx-auto rounded-2xl"
+</div>
+
+<div class="w-full max-w-sm mx-auto px-4 pb-4 results-content">
+	<BodyBeforeAfterCard
+		currentStage={bodyCurrentStage}
+		goalStage={bodyGoalStage}
+		{gender}
+		{currentBfPercent}
+		{goalBfPercent}
 	/>
-	<h2 class="text-2xl font-extrabold text-heading leading-6 text-center">
-		{#if name.trim()}
-			<span class="text-accent">{name.trim()}</span>, seu protocolo
-		{:else}
-			Seu protocolo
-		{/if}
-		<span class="text-accent">milimetricamente</span> desenhado para perder até
-		{#if kgToLose != null}
-			<span class="text-accent font-bold">{kgToLose}kg</span>
-		{:else}
-			<span class="text-accent font-bold">—</span>
-		{/if}
-		.
-	</h2>
-	<OfertaBeforeAfter
-		bodyFatLevel={bodyFatLevel}
-		bodyFatGoal={bodyFatGoal}
-		genderAnswer={genderAnswer}
+	<NutritionPlanCard
+		{includeBreakfast}
+		{mealCount}
+		caloriasMeta={calorieProfile.caloriasMeta}
+		deficitCalorico={calorieProfile.deficitCalorico}
+		proteinaG={calorieProfile.proteinaG}
+		carboidratoG={calorieProfile.carboidratoG}
+		gorduraG={calorieProfile.gorduraG}
+		fibraG={calorieProfile.fibraG}
 	/>
 
-	{#if currentKg != null && goalKg != null}
-		<div class="flex flex-col gap-3 w-full items-center px-4">
-			<h3 class="text-heading text-base font-medium w-full text-left">Evolução de peso</h3>
-			<div class="w-full">
-				<WeightLossLineChart
-					currentKg={currentKg}
-					goalKg={goalKg}
-					weeks={weeksEstimate}
-					hideAxisLabels
-				/>
-			</div>
-		</div>
-	{/if}
-
-	<div class="flex flex-col gap-4">
-		<div class="flex justify-center">
-			<AvatarStack initials={nameInitials} size="md" />
-		</div>
-		<h2 class="text-2xl font-extrabold text-heading leading-6">
-			Acesse seu protocolo para ter resultados <span class="text-accent">2.5X</span> mais rápido.
-		</h2>
-		<p class="text-sm text-body leading-[14px] max-w-md mx-auto">
-			Você recebe todos esses itens ao contratar seu protocolo para emagrecer agora.
+	<!-- Social proof -->
+	<div class="mt-4 flex items-center gap-3 border border-line rounded-full px-4 py-2.5">
+		<AvatarStack {initials} max={3} size="sm" variant="default" />
+		<p class="text-xs text-muted leading-tight">
+			Mais de 15.000 pessoas já emagreceram enviando uma foto no WhatsApp.
 		</p>
 	</div>
 
-	<!-- Price Card: um único bloco verde (borda + fundo) com conteúdo arredondado em cima e embaixo -->
-	<div
-		id="bloco-preco"
-		class="bloco-preco-shimmer relative w-full flex flex-col text-left rounded-2xl border-[2px] border-accent bg-accent overflow-hidden"
-	>
-		<div class="flex flex-col gap-5 p-5 mx-0.5 mt-0.5 mb-0.5 rounded-2xl overflow-hidden border border-line/30 bg-surface">
-			<!-- Header: título + 12x de acima do preço + R$33,12 e R$597 na mesma linha -->
-			<div class="flex flex-col gap-1">
-				<h3 class="text-lg font-extrabold text-heading pt-2.5 pb-[15px]">
-					Protocolo{name.trim() ? ` ${name.trim()}` : ''}
-				</h3>
-				<span class="text-sm text-muted">12x de</span>
-				<div class="flex items-center justify-between gap-3 flex-wrap">
-					<span class="text-[32px] font-extrabold text-heading leading-none">R$33,12</span>
-					<span class="text-base text-heading line-through shrink-0">R$597</span>
+	<ResultsOffer bind:selectedPlan {plans} {actionVerb} {planObjectiveLabel} {name} {sexo} {age} objetivo={planObjectiveLabel} />
+
+	<!-- O que está incluso -->
+	<div class="mt-2 pb-10">
+		<h2 class="text-2xl font-extrabold text-heading leading-none text-center mb-1">
+			O que você recebe no seu<br>plano para <span class="text-nutrition-green">{planObjectiveLabel}</span>
+		</h2>
+		<p class="text-sm text-muted text-center mb-6">
+			Tudo que você precisa para chegar nos
+			{#if goalKg != null}
+				<span class="text-nutrition-green font-semibold">{goalKg}kg</span>
+			{:else}
+				<span class="text-nutrition-green font-semibold">…kg</span>
+			{/if}
+			em um único lugar.
+		</p>
+
+		<div class="flex flex-col gap-4">
+			<!-- Item 1 -->
+			<div class="flex items-center gap-4">
+				<div class="feature-thumb shrink-0 flex min-w-0 flex-col justify-end p-2">
+					<div class="feature-cal-bar mb-[15px] flex h-[15px] w-full min-w-0 max-w-full gap-[2px]">
+						{#each Array(FEATURE_CAL_SEGMENTS) as _, i}
+							<div
+								class="feature-cal-bar__seg"
+								class:feature-cal-bar__seg--empty={i >= featureCalFilled}
+								style={i < featureCalFilled
+									? `background-color: ${featureCalColorAt(featureCalRatio(i))}`
+									: undefined}
+							></div>
+						{/each}
+					</div>
+					<p class="text-[11px] font-bold text-heading leading-none">{calorieProfile.caloriasMeta.toLocaleString('pt-BR')}</p>
 				</div>
-				<span class="text-sm text-muted">Ou R$397 à vista</span>
+				<div>
+					<p class="text-sm font-bold text-heading mb-1 leading-[14px]">Plano completo de calorias e macros</p>
+					<p class="text-xs text-muted leading-[12px]">Sua meta de <span class="text-nutrition-green font-bold">{calorieProfile.caloriasMeta.toLocaleString('pt-BR')} kcal</span> calculada pro seu corpo e ajustada automaticamente conforme você evolui.</p>
+				</div>
 			</div>
 
-			<!-- Divider -->
-			<div class="border-t border-line/50"></div>
-
-			<!-- Título da categoria -->
-			<span class="text-xs font-medium text-muted">Você vai receber</span>
-
-			<!-- Features: ícone 10×10 por categoria -->
-			<ul class="flex flex-col gap-4">
-				<li class="flex items-start gap-3">
-					<span class="w-[15px] h-[15px] shrink-0 mt-1.5 text-accent" aria-hidden="true">
-						<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>
-					</span>
-					<div class="flex flex-col gap-0.5">
-						<span class="text-sm font-bold text-heading">Protocolo Personalizado para {goalLabel === 'emagrecer' ? 'Emagrecer' : 'Ganhar Massa'}</span>
-						<span class="text-xs text-muted leading-relaxed">Plano de treino desenhado milimetricamente pelo Lotz com base nas suas respostas e no seu objetivo.</span>
+			<!-- Item 2 -->
+			<div class="flex items-center gap-4">
+				<div class="feature-thumb shrink-0 flex flex-col items-center justify-end p-3">
+					<div class="flex items-center justify-center gap-1.5">
+						<i class="fa-solid fa-check text-nutrition-green text-[11px] shrink-0"></i>
+						<p class="text-[11px] font-medium text-heading leading-none">1 Pizza</p>
 					</div>
-				</li>
-				<li class="flex items-start gap-3">
-					<span class="w-[15px] h-[15px] shrink-0 mt-1.5 text-accent" aria-hidden="true">
-						<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></svg>
-					</span>
-					<div class="flex flex-col gap-0.5 min-w-0 flex-1">
-						<span class="flex items-center gap-2 flex-wrap">
-							<span class="text-sm font-bold text-heading">Acesso ao Aplicativo</span>
-							<span class="flex items-center gap-1 shrink-0" aria-hidden="true">
-								<img src="/apple-logo.png" alt="" width="14" height="14" class="w-[14px] h-[14px] object-contain" />
-								<img src="/google-play-logo.png" alt="" width="14" height="14" class="w-[14px] h-[14px] object-contain" />
-							</span>
+				</div>
+				<div>
+					<p class="text-sm font-bold text-heading mb-1">Controle no WhatsApp <i class="fa-brands fa-whatsapp text-green-500"></i></p>
+					<p class="text-xs text-muted leading-[12px]">Registre qualquer refeição com apenas uma foto, áudio ou texto no seu WhatsApp de uma maneira super rápida.</p>
+				</div>
+			</div>
+
+			<!-- Item 3 -->
+			<div class="flex items-center gap-4">
+				<div class="feature-thumb shrink-0 flex flex-col items-start justify-end p-3">
+					<p class="text-[9px] text-muted mb-1">12:15 PM</p>
+					<p class="whitespace-nowrap text-[8px] font-bold text-heading leading-none">
+						<i class="fa-solid fa-fire text-nutrition-green text-[7px]"></i> {Math.round(calorieProfile.caloriasMeta / mealCount)} kcal
+					</p>
+				</div>
+				<div>
+					<p class="text-sm font-bold text-heading mb-1 flex items-center gap-0.5 flex-wrap">
+						Cardápio diário para {actionVerb}
+						<span class="inline-flex items-center justify-center w-5 h-5 rounded bg-violet-100 text-violet-600 shrink-0" title="Presente" aria-hidden="true">
+							<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"></polyline><rect x="2" y="7" width="20" height="5"></rect><line x1="12" y1="22" x2="12" y2="7"></line><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path></svg>
 						</span>
-						<span class="text-xs text-muted leading-relaxed">Sua ficha de treino e acompanhamento da sua evolução sempre na palma da mão.</span>
-					</div>
-				</li>
-				<li class="flex items-start gap-3">
-					<span class="w-[15px] h-[15px] shrink-0 mt-1.5 text-accent" aria-hidden="true">
-						<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-					</span>
-					<div class="flex flex-col gap-0.5">
-						<span class="text-sm font-bold text-heading">3 Meses de Acompanhamento Individual</span>
-						<span class="text-xs text-muted leading-relaxed">Acesso ao WhatsApp individual para acompanhar sua evolução e adaptar o protocolo.</span>
-					</div>
-				</li>
-				<li class="flex items-start gap-3">
-					<span class="w-[15px] h-[15px] shrink-0 mt-1.5 text-accent" aria-hidden="true">
-						<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15v2c0 1.1-.9 2-2 2h-4a2 2 0 0 1-2-2v-2"/><path d="M17 15V2"/></svg>
-					</span>
-					<div class="flex flex-col gap-0.5">
-						<span class="flex items-center gap-2 flex-wrap">
-							<span class="text-sm font-bold text-heading">Plano Alimentar Personalizado</span>
-							<span class="flex items-center gap-1.5 shrink-0">
-								<span class="rounded-md bg-accent/15 px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wide text-accent">bônus</span>
-								<span class="text-[9px] font-medium tabular-nums text-red-500">{countdownDisplay}</span>
-							</span>
+						<span class="text-xs font-bold tabular-nums text-red-500 shrink-0">{countdownDisplay}</span>
+					</p>
+					<p class="text-xs text-muted leading-[12px]">Sugestões de refeições dentro da sua meta de <span class="text-nutrition-green font-bold">{calorieProfile.caloriasMeta.toLocaleString('pt-BR')} kcal</span> em <span class="text-nutrition-green font-bold">{mealCount} refeições</span> ao longo do dia. Você não precisa pensar, só seguir.</p>
+				</div>
+			</div>
+
+			<!-- Item 4 -->
+			<div class="flex items-center gap-4">
+				<div class="feature-thumb shrink-0 flex flex-col justify-end p-2">
+					<svg viewBox="0 0 80 40" class="w-full mb-1" fill="none">
+						<path
+							d="M4 9 L11 15 L17 11 L24 18 L30 13 L37 21 L43 16 L50 24 L56 19 L63 27 L69 22 L76 33"
+							stroke="#8ED33A"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							fill="none"
+						/>
+					</svg>
+					<p class="text-[11px] font-bold text-heading leading-none">{BODY_FAT_LABELS[bodyGoalStage]}</p>
+					<p class="text-[8px] text-muted">% Gordura</p>
+				</div>
+				<div>
+					<p class="text-sm font-bold text-heading mb-1 flex items-center gap-0.5 flex-wrap">
+						Análise corporal por foto
+						<span class="inline-flex items-center justify-center w-5 h-5 rounded bg-violet-100 text-violet-600 shrink-0" title="Presente" aria-hidden="true">
+							<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"></polyline><rect x="2" y="7" width="20" height="5"></rect><line x1="12" y1="22" x2="12" y2="7"></line><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path></svg>
 						</span>
-						<span class="text-xs text-muted leading-relaxed">Feito por uma nutricionista exclusivamente para você e para o seu objetivo de <span class="text-accent">{goalLabel}</span>.</span>
-					</div>
-				</li>
-				<li class="flex items-start gap-3">
-					<span class="w-[15px] h-[15px] shrink-0 mt-1.5 text-accent" aria-hidden="true">
-						<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-					</span>
-					<div class="flex flex-col gap-0.5">
-						<span class="flex items-center gap-2 flex-wrap">
-							<span class="text-sm font-bold text-heading">Lotz Academy</span>
-							<span class="flex items-center gap-1.5 shrink-0">
-								<span class="rounded-md bg-accent/15 px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wide text-accent">bônus</span>
-								<span class="text-[9px] font-medium tabular-nums text-red-500">{countdownDisplay}</span>
-							</span>
-						</span>
-						<span class="text-xs text-muted leading-relaxed">Acesso à nossa plataforma de videoaulas com mais de 5 categorias de treino.</span>
-					</div>
-				</li>
-				<li class="flex items-start gap-3">
-					<span class="w-[15px] h-[15px] shrink-0 mt-1.5 text-accent" aria-hidden="true">
-						<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-					</span>
-					<div class="flex flex-col gap-0.5">
-						<span class="text-sm font-bold text-heading">Garantia de 7 Dias</span>
-						<span class="text-xs text-muted leading-relaxed">Experimente nosso serviço por 7 dias e veja se é para você. Se não for, devolvemos tudo.</span>
-					</div>
-				</li>
-			</ul>
+						<span class="text-xs font-bold tabular-nums text-red-500 shrink-0">{countdownDisplay}</span>
+					</p>
+					<p class="text-xs text-muted leading-[12px]">Envie fotos e veja a mudança acontecendo em direção aos <span class="text-nutrition-green font-bold">{BODY_FAT_LABELS[bodyGoalStage]}</span> de gordura. Não só números na balança e receba dicas.</p>
+				</div>
+			</div>
 
-			{#if hasAnyEspecificidade}
-			<!-- Divider -->
-			<div class="border-t border-line/50"></div>
+			<!-- Item 5 -->
+			<div class="flex items-center gap-4">
+				<div class="feature-thumb shrink-0 flex flex-col items-start justify-end p-3">
+					<p class="text-[14px] font-bold text-heading leading-none mb-1.5">{currentKg != null ? currentKg + ' kg' : '…'}</p>
+					<div class="flex w-full items-end gap-0.5 h-7 min-h-[28px]">
+						{#each evolutionBarHeights as h, i}
+							<div
+								class="min-w-0 flex-1 rounded-[2px] {i === evolutionBarHeights.length - 1
+									? 'bg-nutrition-green'
+									: 'bg-[#D1D1D6]'}"
+								style="height:{h * 100}%"
+							></div>
+						{/each}
+					</div>
+				</div>
+				<div>
+					<p class="text-sm font-bold text-heading mb-1">Gráficos de evolução</p>
+					<p class="text-xs text-muted leading-[12px]">
+						Peso, calorias e macros, performance nutricional, você consegue acompanhar toda sua jornada de <span class="text-nutrition-green font-bold">{currentKg ?? '…'}kg</span> até <span class="text-nutrition-green font-bold">{goalKg ?? '…'}kg</span>, em tempo real.
+					</p>
+				</div>
+			</div>
 
-			<!-- Título da categoria -->
-			<span class="text-xs font-medium text-muted">Suas especificidades</span>
+			<!-- Item 6 -->
+			<div class="flex items-center gap-4">
+				<div class="feature-thumb shrink-0 flex flex-col items-center justify-center p-3 text-center">
+					<p class="w-full text-center text-[12px] font-semibold text-heading leading-tight">Pizza</p>
+					<p
+						class="mt-1 flex w-full items-center justify-center gap-0.5 text-[7px] font-medium leading-none text-muted"
+					>
+						<i class="fa-solid fa-fire shrink-0 text-nutrition-green text-[6px]"></i>
+						<span>480 kcal</span>
+					</p>
+				</div>
+				<div>
+					<p class="text-sm font-bold text-heading mb-1">Assistente de refeições</p>
+					<p class="text-xs text-muted leading-[12px]">Peça essa receita no seu WhatsApp, com base no que você tem em casa e nas calorias que ainda sobram no dia para você ficar em déficit calórico.</p>
+				</div>
+			</div>
+		</div>
 
-			<!-- Itens com toggle à esquerda (ativar/desativar) — só os que o usuário escolheu no quiz -->
-			<ul class="flex flex-col gap-4">
-				{#if showAdaptacao}
-				<li class="flex items-center gap-3">
+		<!-- Melhorias Ativadas (condicional): só linhas em cima/baixo, sem box -->
+		{#if hasMelhorias}
+		<div class="mt-6 border-t border-b border-line py-4">
+			<p class="text-xs text-muted mb-3">Melhorias Ativadas</p>
+			<div class="flex flex-col gap-4">
+				{#if isGlp1}
+				<div class="flex items-start gap-3">
 					<button
 						type="button"
-						class="results-toggle shrink-0 w-9 h-5 rounded-full relative transition-colors duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 {toggleAdaptacao ? 'bg-accent' : 'bg-line/50'}"
-						aria-pressed={toggleAdaptacao}
-						aria-label="Alternar adaptação ao tratamento"
-						onclick={() => (toggleAdaptacao = !toggleAdaptacao)}
+						role="switch"
+						aria-checked={melhoriaGlp1On}
+						aria-label="Ativar adaptação GLP-1"
+						onclick={() => (melhoriaGlp1On = !melhoriaGlp1On)}
+						class="shrink-0 mt-0.5 w-10 h-6 rounded-full flex items-center transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-heading focus-visible:ring-offset-2"
+						class:bg-nutrition-green={melhoriaGlp1On}
+						class:justify-end={melhoriaGlp1On}
+						class:pr-1={melhoriaGlp1On}
+						class:bg-[#C7C7CC]={!melhoriaGlp1On}
+						class:justify-start={!melhoriaGlp1On}
+						class:pl-1={!melhoriaGlp1On}
 					>
-						<span
-							class="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-200 {toggleAdaptacao ? 'left-[18px]' : 'left-0.5'}"
-						></span>
+						<span class="w-4 h-4 rounded-full bg-white shadow pointer-events-none"></span>
 					</button>
-					<div class="flex flex-col gap-0.5 min-w-0">
-						<span class="text-sm font-bold text-heading">Adaptação ao tratamento</span>
-						<span class="text-xs text-muted leading-[19.5px]">Treino alinhado ao uso de medicamentos como <span class="text-accent">Mounjaro</span> ou <span class="text-accent">Ozempic</span>.</span>
+					<div class="min-w-0 flex-1 transition-opacity" class:opacity-50={!melhoriaGlp1On}>
+						<p class="text-xs font-bold text-heading leading-none mb-1">Adaptado para uso de GLP-1</p>
+						<p class="text-xs text-muted leading-[12px]">Plano ajustado para quem usa Ozempic ou Mounjaro com foco em preservar músculo enquanto emagrece.</p>
 					</div>
-				</li>
+				</div>
 				{/if}
-				{#if showAerobico}
-				<li class="flex items-center gap-3">
+				{#if hasEvent}
+				<div class="flex items-start gap-3">
 					<button
 						type="button"
-						class="results-toggle shrink-0 w-9 h-5 rounded-full relative transition-colors duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 {toggleAerobico ? 'bg-accent' : 'bg-line/50'}"
-						aria-pressed={toggleAerobico}
-						aria-label="Alternar treino aeróbico estratégico"
-						onclick={() => (toggleAerobico = !toggleAerobico)}
+						role="switch"
+						aria-checked={melhoriaEventOn}
+						aria-label="Ativar aceleradores para {eventLabel}"
+						onclick={() => (melhoriaEventOn = !melhoriaEventOn)}
+						class="shrink-0 mt-0.5 w-10 h-6 rounded-full flex items-center transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-heading focus-visible:ring-offset-2"
+						class:bg-nutrition-green={melhoriaEventOn}
+						class:justify-end={melhoriaEventOn}
+						class:pr-1={melhoriaEventOn}
+						class:bg-[#C7C7CC]={!melhoriaEventOn}
+						class:justify-start={!melhoriaEventOn}
+						class:pl-1={!melhoriaEventOn}
 					>
-						<span
-							class="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-200 {toggleAerobico ? 'left-[18px]' : 'left-0.5'}"
-						></span>
+						<span class="w-4 h-4 rounded-full bg-white shadow pointer-events-none"></span>
 					</button>
-					<div class="flex flex-col gap-0.5 min-w-0">
-						<span class="text-sm font-bold text-heading">Treino aeróbico estratégico</span>
-						<span class="text-xs text-muted leading-[19.5px]">Sessões incluídas para aumentar o gasto calórico dentro do seu protocolo para <span class="text-accent">{goalLabel}</span>.</span>
+					<div class="min-w-0 flex-1 transition-opacity" class:opacity-50={!melhoriaEventOn}>
+						<p class="text-xs font-bold text-heading leading-none mb-1">Aceleradores para {eventLabel}</p>
+						<p class="text-xs text-muted leading-[12px]">Você tem <span class="text-nutrition-green font-bold">{eventLabel}</span> chegando. O Zuppy calculou exatamente o que precisa fazer para chegar bem no dia{#if eventDateFormatted}{' '}(<span class="text-nutrition-green font-bold">{eventDateFormatted}</span>){/if}.</p>
 					</div>
-				</li>
+				</div>
 				{/if}
-				{#if hasEvent && eventLabel}
-					<li class="flex items-center gap-3">
+			</div>
+		</div>
+		{/if}
+
+		<!-- Sem app novo -->
+		<div class="mt-8 text-center">
+			<h2 class="text-2xl font-extrabold text-heading leading-none mb-2">
+				Sem app novo. Sem aprender nada. Sem complicação para <span class="text-nutrition-green">{planObjectiveLabel}.</span>
+			</h2>
+			<p class="text-sm text-muted leading-[12px] mb-8">Você já usa o WhatsApp, o Zuppy só se encaixa na sua rotina.</p>
+
+			<div class="flex flex-col gap-0 text-left">
+				{#each steps as step, i}
+				<div class="flex gap-4">
+					<!-- Círculo + linha -->
+					<div class="flex flex-col items-center shrink-0">
+						<div class="w-7 h-7 rounded-full bg-[#E8E8ED] flex items-center justify-center shrink-0">
+							{#if i === 0}
+								<div class="step-pulse w-3 h-3 rounded-full bg-nutrition-green"></div>
+							{/if}
+						</div>
+						{#if i < 2}
+							<div class="w-px flex-1 bg-line my-1"></div>
+						{/if}
+					</div>
+					<!-- Conteúdo -->
+					<div class="pb-8 pt-1">
+						<p class="text-sm font-bold text-heading leading-none mb-1">{step.title}</p>
+						{#if i === 0}
+							<p class="text-xs text-muted leading-[12px]">Conecte seu WhatsApp ao Zuppy. Em menos de 1 minuto, seu plano de <strong class="text-nutrition-green">{calorieProfile.caloriasMeta.toLocaleString('pt-BR')} kcal</strong> já está ativo e pronto pra usar.</p>
+						{:else}
+							<p class="text-xs text-muted leading-[12px]">{@html step.desc}</p>
+						{/if}
+					</div>
+				</div>
+				{/each}
+			</div>
+		</div>
+
+		<!-- Social proof final -->
+		<div class="mt-4 text-center">
+			<p class="text-2xl font-extrabold text-heading leading-none">
+				Mais de <span class="text-nutrition-green">15.000 pessoas</span> já estão usando o <span class="text-nutrition-green">Zuppy</span> para <span class="text-nutrition-green">{planObjectiveLabel}</span> enviando uma foto no WhatsApp.
+			</p>
+		</div>
+
+		<!-- Testimonial cards (Instagram-style) -->
+		<div class="mt-6 pb-4">
+			<div
+				bind:this={testimonialSliderEl}
+				onscroll={onTestimonialScroll}
+				class="flex overflow-x-auto gap-3 no-testimonial-scrollbar -mx-4 px-4"
+				style="scroll-snap-type: x mandatory;"
+			>
+				{#each testimonials as t, ti}
+					<div
+						class="bg-white rounded-2xl overflow-hidden shrink-0 shadow-sm"
+						style="width: calc(92% - 0.5rem); scroll-snap-align: start;"
+					>
+						<!-- Header: avatar ring + username -->
+						<div class="flex items-center gap-2.5 px-3 py-3">
+							<svg width="36" height="36" viewBox="0 0 36 36" class="shrink-0" aria-hidden="true">
+								<defs>
+									<linearGradient id="ig-ring-{ti}" x1="0%" y1="100%" x2="100%" y2="0%">
+										<stop offset="0%" stop-color="#f09433" />
+										<stop offset="40%" stop-color="#dc2743" />
+										<stop offset="100%" stop-color="#bc1888" />
+									</linearGradient>
+								</defs>
+								<circle cx="18" cy="18" r="16" fill="none" stroke="url(#ig-ring-{ti})" stroke-width="2.5" />
+								<circle cx="18" cy="18" r="12" fill="#D1D1D6" />
+							</svg>
+							<span class="text-sm font-medium text-heading truncate">{t.user}</span>
+						</div>
+
+						<!-- Image placeholder -->
+						<div class="w-full bg-[#AEAEB2] aspect-square"></div>
+
+						<!-- Stats -->
+						<div class="flex border-t border-line">
+							<div class="flex-1 px-3 py-3">
+								<p class="text-[10px] text-muted mb-0.5">Peso anterior</p>
+								<p class="text-sm font-bold text-heading">{t.prevKg}Kg</p>
+							</div>
+							<div class="w-px bg-line"></div>
+							<div class="flex-1 px-3 py-3">
+								<p class="text-[10px] text-muted mb-0.5">Peso atual</p>
+								<p class="text-sm font-bold text-heading">{t.currKg}Kg</p>
+							</div>
+						</div>
+					</div>
+				{/each}
+			</div>
+
+			<!-- Dots -->
+			<div class="flex justify-center gap-1.5 mt-3">
+				{#each testimonials as _, i}
+					<button
+						onclick={() => goToTestimonial(i)}
+						aria-label="Ver depoimento {i + 1}"
+						class="rounded-full transition-all duration-200 {activeTestimonial === i ? 'w-2 h-2 bg-heading' : 'w-1.5 h-1.5 bg-[#D1D1D6]'}"
+					></button>
+				{/each}
+			</div>
+		</div>
+
+		<ResultsOffer bind:selectedPlan {plans} {actionVerb} class="mt-6" />
+
+		<!-- Veja o Zuppy por dentro -->
+		<div class="mt-10">
+			<h2 class="text-2xl font-extrabold text-heading leading-tight mb-2 text-center">
+				Veja o Zuppy por dentro.
+			</h2>
+			<p class="text-sm text-muted leading-[14px] mb-5 text-center">
+				Simples, direto e tudo no WhatsApp. Sem baixar nada, já funciona no app que você usa todo dia.
+			</p>
+
+			<div class="relative -mx-4">
+				<!-- Fade esquerda -->
+				<div class="absolute left-0 top-0 bottom-0 w-[14%] z-10 pointer-events-none" style="background: linear-gradient(to right, color-mix(in srgb, var(--color-bg) 60%, transparent), transparent);"></div>
+				<!-- Fade direita -->
+				<div class="absolute right-0 top-0 bottom-0 w-[14%] z-10 pointer-events-none" style="background: linear-gradient(to left, color-mix(in srgb, var(--color-bg) 60%, transparent), transparent);"></div>
+
+				<div
+					bind:this={appSliderEl}
+					onscroll={onAppSliderScroll}
+					class="flex overflow-x-auto gap-3 no-testimonial-scrollbar"
+					style="scroll-snap-type: x mandatory; padding-inline: 14%;"
+				>
+					{#each appScreens as screen, i}
+						<div
+							class="shrink-0 rounded-2xl overflow-hidden transition-all duration-300"
+							style="width: calc(72% - 0.5rem); scroll-snap-align: center; opacity: {activeAppSlide === i ? 1 : 0.2}; transform: scale({activeAppSlide === i ? 1.04 : 1}); transform-origin: center;"
+						>
+							<img
+								src={screen.src}
+								alt="Zuppy app - tela {screen.label}"
+								class="w-full h-auto block"
+							/>
+						</div>
+					{/each}
+				</div>
+			</div>
+
+			<!-- Dots -->
+			<div class="flex justify-center gap-1.5 mt-3 pb-4">
+				{#each appScreens as screen, i}
+					<button
+						onclick={() => goToAppSlide(i)}
+						aria-label="Ver tela {screen.label}"
+						class="rounded-full transition-all duration-200 {activeAppSlide === i ? 'w-2 h-2 bg-heading' : 'w-1.5 h-1.5 bg-[#D1D1D6]'}"
+					></button>
+				{/each}
+			</div>
+		</div>
+
+		<!-- FAQ -->
+		<div class="mt-10 pb-6">
+			<h2 class="text-2xl font-extrabold text-heading leading-none mb-1 text-center">
+				Ainda tem dúvidas?
+			</h2>
+			<p class="text-sm text-muted leading-none mb-5 text-center">
+				A gente separou as 6 perguntas mais frequentes.
+			</p>
+
+			<div class="flex flex-col">
+				{#each faqs as faq, i}
+					<div class="border-t border-line">
 						<button
 							type="button"
-							class="results-toggle shrink-0 w-9 h-5 rounded-full relative transition-colors duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 {toggleAcelerador ? 'bg-accent' : 'bg-line/50'}"
-							aria-pressed={toggleAcelerador}
-							aria-label="Alternar acelerador"
-							onclick={() => (toggleAcelerador = !toggleAcelerador)}
+							onclick={() => toggleFaq(i)}
+							class="w-full flex items-center justify-between gap-3 py-4 text-left"
+							aria-expanded={openFaq === i}
 						>
-							<span
-								class="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-200 {toggleAcelerador ? 'left-[18px]' : 'left-0.5'}"
-							></span>
+							<span class="text-sm font-semibold text-heading leading-none">{i + 1}. {faq.q}</span>
+							<i
+								class="fa-solid fa-chevron-down text-muted text-xs shrink-0 transition-transform duration-200"
+								style="transform: rotate({openFaq === i ? '180deg' : '0deg'})"
+								aria-hidden="true"
+							></i>
 						</button>
-						<div class="flex flex-col gap-0.5 min-w-0">
-							<span class="text-sm font-bold text-heading">Acelerador para {name?.trim() || 'você'}</span>
-							<span class="text-xs text-muted leading-[19.5px]">
-								Plano adaptado para intensificar sua evolução até <span class="text-accent">{eventLabel}</span>
-								{#if eventDateFormatted} em <span class="text-accent">{eventDateFormatted}</span>{/if}.
-							</span>
-						</div>
-					</li>
-				{/if}
-			</ul>
-			{/if}
-		</div>
-
-		<!-- Bloco do botão: div "debaixo" com efeito sobreposto -->
-		<a
-			href={checkoutUrl || '#'}
-			target={checkoutUrl ? '_blank' : undefined}
-			rel={checkoutUrl ? 'noopener noreferrer' : undefined}
-			class="mx-0.5 mb-0.5 flex items-center justify-center gap-2 rounded-b-2xl px-5 py-[27.5px] font-black text-base tracking-widest text-bg bg-transparent transition-all duration-200 active:scale-[0.98] hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bg focus-visible:ring-inset"
-			onclick={(e) => {
-				if (!checkoutUrl) e.preventDefault();
-			}}
-		>
-			COMEÇAR AGORA
-			<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="cta-arrow">
-				<path d="M5 12h14M12 5l7 7-7 7"/>
-			</svg>
-		</a>
-	</div>
-
-	<img
-		src="/payment-methods.png"
-		alt="Formas de pagamento: Pix, Apple Pay, Google Pay, Mastercard, Visa e outros"
-		class="w-full h-auto object-contain"
-	/>
-	<h2 class="text-2xl font-extrabold text-heading leading-6 text-center">
-		Como serão os próximos passos a partir daqui.
-	</h2>
-
-	<!-- Timeline: Hoje, Dia 3, Dia 7 -->
-	<div class="w-full rounded-2xl bg-bg overflow-hidden text-left">
-		<div class="relative px-4 py-6">
-			<!-- Linha vertical da timeline (centralizada com as bolinhas: left-7 = 28px = 16px padding + 12px meio do círculo) -->
-			<div
-				class="absolute left-7 top-8 bottom-8 w-[3px] -translate-x-1/2 bg-line"
-				aria-hidden="true"
-			></div>
-
-			<!-- Hoje -->
-			<div class="relative flex gap-4 pb-8">
-				<div
-					class="timeline-dot-shimmer relative z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-line bg-surface"
-					aria-hidden="true"
-				>
-					<span class="h-2 w-2 rounded-full bg-accent"></span>
-				</div>
-				<div class="flex-1 min-w-0 pt-0.5 text-left">
-					<p class="font-bold text-heading">Hoje — <span class="font-normal">{dateHoje}</span></p>
-					<p class="mt-1 text-sm text-body leading-none text-left">
-						Você garante seu Protocolo Personalizado de Emagrecimento e já recebe acesso imediato ao aplicativo exclusivo e aos bônus. Nossa equipe entra em contato com você no WhatsApp para iniciar seu acompanhamento.
-					</p>
-				</div>
-			</div>
-
-			<!-- Dia 3 -->
-			<div class="relative flex gap-4 pb-8">
-				<div
-					class="relative z-10 h-6 w-6 shrink-0 rounded-full border-2 border-line bg-line"
-					aria-hidden="true"
-				></div>
-				<div class="flex-1 min-w-0 pt-0.5 text-left">
-					<p class="font-bold text-heading">Dia 3 — <span class="font-normal">{dateDia3}</span></p>
-					<p class="mt-1 text-sm text-body leading-none text-left">
-						Entregamos seu plano de treino totalmente desenhado para você, com orientações claras para começar da forma certa e já sentir evolução nas primeiras semanas.
-					</p>
-				</div>
-			</div>
-
-			<!-- Dia 7 -->
-			<div class="relative flex gap-4">
-				<div
-					class="relative z-10 h-6 w-6 shrink-0 rounded-full border-2 border-line bg-line"
-					aria-hidden="true"
-				></div>
-				<div class="flex-1 min-w-0 pt-0.5 text-left">
-					<p class="font-bold text-heading">Dia 7 — <span class="font-normal">{dateDia7}</span></p>
-					<p class="mt-1 text-sm text-body leading-none text-left">
-						Você recebe seu plano alimentar individualizado, criado por nutricionista para acelerar seu plano de emagrecimento.
-					</p>
-				</div>
-			</div>
-		</div>
-	</div>
-
-	<h2 class="text-2xl font-extrabold text-heading leading-6 text-center">
-		Veja o resultado de algumas pessoas que aplicaram o protocolo Lotz
-	</h2>
-
-	<div class="mt-4 w-full aspect-video rounded-lg bg-gray-300" aria-hidden="true"></div>
-
-	<!-- Bloco de garantia 7 dias -->
-	<div
-		class="w-full rounded-2xl bg-[#1B1B1E] px-4 py-6 text-left"
-		role="region"
-		aria-labelledby="garantia-heading"
-	>
-		<img
-			src="/garantia-7-dias-badge.png"
-			alt="Selo: Reembolso garantia 7 dias"
-			class="h-20 w-20 shrink-0 object-contain"
-		/>
-		<h2
-			id="garantia-heading"
-			class="mt-4 text-2xl font-extrabold leading-tight text-white"
-		>
-			<span>Garantia incondicional</span><br />
-			<span>de 7 dias</span>
-		</h2>
-		<p class="mt-4 text-sm font-normal leading-none text-white">
-			Nós confiamos tanto no método protocolo Lotz que você pode testar o protocolo com total tranquilidade. Se dentro de 7 dias você sentir que não é para você, basta enviar uma mensagem para nossa equipe e devolveremos 100% do seu dinheiro.
-		</p>
-	</div>
-
-	<!-- Perguntas Frequentes -->
-	<section class="w-full flex flex-col gap-4 text-center" aria-labelledby="faq-heading">
-		<h2 id="faq-heading" class="text-2xl font-extrabold text-heading leading-6">
-			Perguntas Frequentes
-		</h2>
-		<p class="text-sm text-body leading-[14px] max-w-md mx-auto">
-			Aqui estão algumas das perguntas que mais recebemos em relação ao protocolo Lotz Para emagrecer.
-		</p>
-		<div class="w-full flex flex-col text-left border-t border-line/50">
-			{#each [
-				{ q: 'Isso é só mais um curso ou planilha?', a: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.' },
-				{ q: 'Vou ter acompanhamento individual mesmo?', a: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.' },
-				{ q: 'Já tentei de tudo… por que isso seria diferente?', a: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.' },
-				{ q: 'Funciona para quem tem pouco tempo?', a: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.' },
-				{ q: 'Existe garantia se eu não tiver resultado?', a: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.' },
-				{ q: 'Quais são as formas de pagamento?', a: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.' }
-			] as faq, i}
-				<details
-					class="group border-b border-line/50"
-					aria-label="{faq.q}"
-				>
-					<summary
-						class="flex items-center justify-between gap-3 list-none py-4 cursor-pointer text-heading text-base font-medium transition-colors [&::-webkit-details-marker]:hidden"
-					>
-						<span>{faq.q}</span>
-						<svg
-							class="w-5 h-5 shrink-0 text-body transition-transform duration-200 group-open:rotate-180"
-							aria-hidden="true"
-							fill="none"
-							stroke="currentColor"
-							viewBox="0 0 24 24"
-						>
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-						</svg>
-					</summary>
-					<div class="pb-4 faq-answer text-body leading-relaxed">
-						<p>{faq.a}</p>
+						{#if openFaq === i}
+							<p class="text-sm text-muted leading-none pb-4">{@html faq.a}</p>
+						{/if}
 					</div>
-				</details>
-			{/each}
+				{/each}
+				<div class="border-t border-line"></div>
+			</div>
 		</div>
-	</section>
+
+		<!-- Disclaimer -->
+		<div class="mt-6 flex gap-3 p-4 rounded-2xl bg-[#fffbeb] border border-amber-200">
+			<i class="fa-solid fa-triangle-exclamation text-amber-600 text-lg shrink-0 mt-0.5" aria-hidden="true"></i>
+			<p class="text-xs text-amber-900/90 leading-[14px]">
+				O Zuppy é uma ferramenta de apoio ao controle alimentar e não substitui o acompanhamento de médicos, nutricionistas ou outros profissionais de saúde. Os resultados podem variar de pessoa para pessoa. Consulte um profissional de saúde antes de iniciar qualquer programa de emagrecimento.
+			</p>
+		</div>
+
+	<!-- Footer -->
+	<footer class="mt-2.5 shrink-0 pb-6 px-4 border-t border-line pt-6">
+		<p class="text-[10px] text-muted/60 leading-none mb-1">© 2026 Zuppy. Todos os direitos reservados.</p>
+		<p class="text-[10px] text-muted/60 leading-none mb-4">CNPJ: 46.737.539/0001-29</p>
+
+		<p class="text-[10px] text-muted/60 leading-relaxed mb-4">
+			Este site não é afiliado ao Facebook™, Google™ ou qualquer plataforma de mídia. Após sair dessas plataformas, a responsabilidade é exclusivamente deste site.
+		</p>
+
+		<p class="text-[10px] text-muted/60 leading-relaxed mb-4">
+			Os resultados podem variar de pessoa para pessoa. As informações disponibilizadas possuem caráter educativo e não substituem orientação médica ou profissional.
+		</p>
+
+		<p class="text-[10px] text-muted/60 leading-relaxed mb-5">
+			Ao utilizar este site você concorda com nossos Termos de Uso e Política de Privacidade.
+		</p>
+
+		<div class="flex flex-wrap gap-x-3 gap-y-1">
+			<a href="https://zuppy.me/terms/use" target="_blank" rel="noopener" class="text-[10px] text-muted/50 hover:text-muted transition-colors">Termos de Uso</a>
+			<span class="text-[10px] text-muted/30">|</span>
+			<a href="https://zuppy.me/terms/privacy" target="_blank" rel="noopener" class="text-[10px] text-muted/50 hover:text-muted transition-colors">Política de Privacidade</a>
+			<span class="text-[10px] text-muted/30">|</span>
+			<a href="https://zuppy.me/terms/subscription" target="_blank" rel="noopener" class="text-[10px] text-muted/50 hover:text-muted transition-colors">Política de Assinatura</a>
+			<span class="text-[10px] text-muted/30">|</span>
+			<a href="https://zuppy.me/terms/refund" target="_blank" rel="noopener" class="text-[10px] text-muted/50 hover:text-muted transition-colors">Garantia de Reembolso</a>
+			<span class="text-[10px] text-muted/30">|</span>
+			<a href="mailto:rodrigo@zuppy.me" class="text-[10px] text-muted/50 hover:text-muted transition-colors">rodrigo@zuppy.me</a>
+		</div>
+	</footer>
+</div>
 </div>
 
 <style>
-	/* Respostas do FAQ: mini texto (Pulse 1) */
-	.faq-answer {
-		font-size: 0.8125rem; /* 13px - Pulse 1 */
-		line-height: 1.4;
+	/* Line-height 14px for all 12px (text-xs) copy on this page */
+	.results-content :global(.text-xs) {
+		line-height: 14px;
+	}
+	/* Line-height 16px for all 14px (text-sm) copy on this page */
+	.results-content :global(.text-sm) {
+		line-height: 16px;
 	}
 
-	.timeline-dot-shimmer {
-		animation: timeline-dot-shimmer 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-	}
-	@keyframes timeline-dot-shimmer {
-		0%,
-		100% {
-			box-shadow: 0 0 0 0 rgba(157, 187, 84, 0.5), 0 0 10px 2px rgba(157, 187, 84, 0.25);
-			opacity: 1;
-		}
-		50% {
-			box-shadow: 0 0 0 6px rgba(157, 187, 84, 0), 0 0 18px 4px rgba(157, 187, 84, 0.12);
-			opacity: 0.95;
-		}
+	.feature-thumb {
+		width: 80px;
+		height: 80px;
+		background: #ffffff;
+		border-radius: 14px;
+		box-shadow: 0 1px 4px rgba(0,0,0,0.06);
 	}
 
-	.bloco-preco-shimmer::after {
-		content: '';
-		position: absolute;
-		inset: 0;
-		border-radius: inherit;
-		background: linear-gradient(
-			105deg,
-			transparent 0%,
-			transparent 40%,
-			rgba(255, 255, 255, 0.24) 50%,
-			transparent 60%,
-			transparent 100%
-		);
-		background-size: 200% 100%;
-		animation: bloco-preco-shimmer 2.5s ease-in-out infinite;
-		pointer-events: none;
-		z-index: 0;
+	/* Mesmo padrão visual de .nutrition-cal-bar (NutritionPlanCard) */
+	.feature-cal-bar__seg {
+		flex: 1 1 0;
+		min-width: 0;
+		height: 100%;
+		border-radius: 2px;
 	}
-	.bloco-preco-shimmer > * {
-		position: relative;
-		z-index: 1;
-	}
-	@keyframes bloco-preco-shimmer {
-		0% {
-			background-position: 200% 0;
-		}
-		100% {
-			background-position: -200% 0;
-		}
+	.feature-cal-bar__seg--empty {
+		background-color: #f7f6f9;
 	}
 
-	.cta-arrow {
-		animation: cta-arrow-bounce 1.2s ease-in-out infinite;
+	.no-testimonial-scrollbar::-webkit-scrollbar { display: none; }
+	.no-testimonial-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+	@keyframes step-pulse {
+		0%, 100% { box-shadow: 0 0 0 0 rgba(142, 211, 58, 0.5); }
+		50% { box-shadow: 0 0 0 6px rgba(142, 211, 58, 0); }
 	}
-	@keyframes cta-arrow-bounce {
-		0%,
-		100% {
-			transform: translateX(0);
-		}
-		50% {
-			transform: translateX(5px);
-		}
+	.step-pulse {
+		animation: step-pulse 2s ease-in-out infinite;
 	}
 </style>

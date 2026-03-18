@@ -44,7 +44,7 @@
 </script>
 
 <svelte:head>
-	<title>Lotz</title>
+	<title>Zuppy</title>
 </svelte:head>
 
 {#if $currentQuestion}

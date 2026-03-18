@@ -10,11 +10,9 @@
 	import StepProgressBar from '$lib/components/quiz/StepProgressBar.svelte';
 	import Logo from '$lib/components/ui/Logo.svelte';
 
-	const FIRST_CHECKPOINT_ID = 'mr-1'; // Checkpoint: Objetivo definido
-
 	let { children } = $props();
 
-	/** Contagem – sobe para 4 ao atingir o primeiro checkpoint; 0 ao voltar para home */
+	/** Contagem – sobe a cada checkpoint; 0 ao voltar para home */
 	let contagem = $state(0);
 	/** Lock para evitar duplo clique em Voltar */
 	let goingBack = $state(false);
@@ -24,10 +22,10 @@
 	const section = $derived(question?.section ?? '');
 	const isCheckpointScreen = $derived(question?.type === 'microresult');
 	const hideProgressAndCount = $derived(isCheckpointScreen);
-	const isMr1Screen = $derived(question?.id === FIRST_CHECKPOINT_ID);
+	const isMr1Screen = $derived(question?.id === 'mr-1');
 	const isMr2Screen = $derived(question?.id === 'mr-2');
 	const isMr3Screen = $derived(question?.id === 'mr-3');
-	const isMr5Screen = $derived(question?.id === 'mr-5');
+	const isMr4Screen = $derived(question?.id === 'mr-4');
 
 	// setContext chamado uma vez na inicialização com getter reativo
 	// (não usar $effect para setContext — setContext só é válido na inicialização do componente)
@@ -36,10 +34,10 @@
 	// $effect.pre roda ANTES do DOM atualizar, garantindo que contagem esteja correto
 	// quando os filhos montam (ex: MicroResultScreen lê o contexto ao inicializar)
 	$effect.pre(() => {
-		if (question?.id === FIRST_CHECKPOINT_ID) contagem = 4;
+		if (question?.id === 'mr-1') contagem = 4;
 		else if (question?.id === 'mr-2') contagem = 7;
 		else if (question?.id === 'mr-3') contagem = 10;
-		else if (question?.id === 'mr-5') contagem = 13;
+		else if (question?.id === 'mr-4') contagem = 13;
 	});
 
 	// Se a navegação terminou, libera o lock do Voltar (rede de segurança)
@@ -85,11 +83,12 @@
 	}
 </script>
 
-<!-- DOM order: header (0), main (1), spacer (2), slot content (3) so quiz content div is 4th child of root -->
-<header class="sticky top-0 z-10 bg-bg px-4 pt-4 pb-3">
+<!-- Layout: altura fixa da tela, rolagem só no meio; header e footer ficam fixos -->
+<div class="min-h-screen max-h-screen flex flex-col overflow-hidden">
+	<header class="shrink-0 z-10 px-4 pt-4 pb-3 bg-transparent backdrop-blur-md">
 	<!-- Row 1: Back ← | Logo (centralizada na tela) | Contagem -->
 	<div class="relative flex items-center justify-between mb-3">
-		{#if !isMr5Screen}
+		{#if !isMr4Screen}
 			<button
 				onclick={handleBack}
 				disabled={navigating.from != null || goingBack}
@@ -108,12 +107,12 @@
 			<Logo />
 		</div>
 
-		{#if !isMr1Screen && !isMr2Screen && !isMr3Screen && !isMr5Screen}
+		{#if !isMr1Screen && !isMr2Screen && !isMr3Screen && !isMr4Screen}
 			<div
 				class="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-line bg-transparent shrink-0"
 				aria-label="Contagem"
 			>
-				<svg width="18" height="18" viewBox="0 0 24 24" fill="none" class="text-accent shrink-0" aria-hidden="true">
+				<svg width="18" height="18" viewBox="0 0 24 24" fill="none" class="text-nutrition-green shrink-0" aria-hidden="true">
 					<path
 						d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"
 						fill="currentColor"
@@ -145,12 +144,15 @@
 
 	<!-- Row 3: Step progress bar (oculto na tela de checkpoint e info medicamento) -->
 	{#if !hideProgressAndCount}
-		<StepProgressBar percent={$progressPercent} steps={5} />
+		<StepProgressBar percent={$progressPercent} steps={4} />
 	{/if}
-</header>
+	</header>
 
-<main class="flex flex-col min-h-0 max-w-lg mx-auto w-full" aria-hidden="true"></main>
+	<main class="flex flex-col min-h-0 max-w-lg mx-auto w-full" aria-hidden="true"></main>
 
-<div aria-hidden="true" class="hidden" style="display: none"></div>
+	<div aria-hidden="true" class="hidden" style="display: none"></div>
 
-{@render children()}
+	<div class="flex-1 min-h-0 overflow-y-auto">
+		{@render children()}
+	</div>
+</div>

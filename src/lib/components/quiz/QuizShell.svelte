@@ -15,6 +15,7 @@
 	import QuestionCard from './QuestionCard.svelte';
 	import InfoScreen from './InfoScreen.svelte';
 	import MicroResultScreen from './MicroResultScreen.svelte';
+	import FeatureInfoScreen from './FeatureInfoScreen.svelte';
 	import QuestionInputNumber from './QuestionInputNumber.svelte';
 	import QuestionInputDate from './QuestionInputDate.svelte';
 	import QuestionInputText from './QuestionInputText.svelte';
@@ -33,6 +34,30 @@
 	const isLast = $derived($isLastQuestion);
 	const next = $derived($nextQuestion);
 
+	// Gendered text substitution: resolve "pronto(a)" → "pronto" or "pronta"
+	const isMale = $derived(quiz.answers['gender'] === 'gender-m');
+	const genderKnown = $derived(
+		quiz.answers['gender'] === 'gender-m' || quiz.answers['gender'] === 'gender-f'
+	);
+	function g(text: string): string {
+		if (!genderKnown) return text;
+		return text.replace(/o\(a\)/g, isMale ? 'o' : 'a');
+	}
+	// Genderized version of the current question (text, subtext, option texts/descriptions)
+	const gq = $derived.by(() => {
+		if (!question || !genderKnown) return question;
+		return {
+			...question,
+			text: g(question.text),
+			subtext: question.subtext ? g(question.subtext) : question.subtext,
+			options: question.options?.map((opt) => ({
+				...opt,
+				text: g(opt.text),
+				description: opt.description ? g(opt.description) : opt.description
+			}))
+		} as typeof question;
+	});
+
 	// body_fat_grid uses a slider + Continuar; no auto-advance on every slider move
 	const isSingleChoiceQuestion = $derived(
 		question?.type === 'single' ||
@@ -41,18 +66,26 @@
 	);
 
 	const isInfoOrMicroResult = $derived(
-		question?.type === 'info' || question?.type === 'microresult'
+		question?.type === 'info' || question?.type === 'microresult' || question?.type === 'feature_info'
 	);
 
 	const currentAnswer = $derived(question ? quiz.answers[question.id] : undefined);
 
-	/** Para body_fat_goal: estágio "antes" = resposta de body_fat_level (0..5). */
+	/** Para body_fat_goal / body_goal_visual: estágio "antes" = resposta de body_fat_level / body_current (0..5). */
 	const bodyFatBeforeStage = $derived.by(() => {
-		if (question?.id !== 'body_fat_goal') return undefined;
-		const v = quiz.answers['body_fat_level'];
-		if (typeof v !== 'string') return undefined;
-		const n = parseInt(v, 10);
-		return Number.isNaN(n) ? 0 : Math.min(5, Math.max(0, n));
+		if (question?.id === 'body_fat_goal') {
+			const v = quiz.answers['body_fat_level'];
+			if (typeof v !== 'string') return undefined;
+			const n = parseInt(v, 10);
+			return Number.isNaN(n) ? 0 : Math.min(5, Math.max(0, n));
+		}
+		if (question?.id === 'body_goal_visual') {
+			const v = quiz.answers['body_current'];
+			if (typeof v !== 'string') return undefined;
+			const n = parseInt(v, 10);
+			return Number.isNaN(n) ? 0 : Math.min(5, Math.max(0, n));
+		}
+		return undefined;
 	});
 	const hasValidAnswer = $derived(
 		currentAnswer !== undefined &&
@@ -82,17 +115,25 @@
 	 */
 	const buttonCascadeDelay = $derived.by(() => {
 		if (question?.type !== 'microresult' || !question) return 0;
+		// mr-4: botão aparece assim que as barras terminam (delay 0; visibilidade controlada por mr4LoadingComplete)
+		if (question.id === 'mr-4') return 0;
 		// mr-2 com cardio: cardio box entra em ~1400ms, botão espera mais 800ms
 		if (question.id === 'mr-2') {
 			const data = getMicroResultData(question.id, quiz.answers, quizConfig.questions);
 			const nexo = data?.nexo as { variant?: string; showCardioBox?: boolean } | undefined;
-			return nexo?.showCardioBox ? 3200 : 2800;
+			return nexo?.showCardioBox ? 1600 : 1400;
 		}
-		return 2800; // mr-1, mr-3, mr-5
+		return 1400; // mr-1, mr-3, mr-5
 	});
 
 	/** Lock para evitar duplo clique em Continuar */
 	let advancing = $state(false);
+
+	/** mr-4: botão Continuar só aparece quando a última barra de carregamento termina */
+	let mr4LoadingComplete = $state(false);
+	$effect(() => {
+		if (question?.id !== 'mr-4') mr4LoadingComplete = false;
+	});
 
 	// Rede de segurança: quando a navegação termina (afterNavigate), limpa o lock advancing
 	$effect(() => {
@@ -134,14 +175,116 @@
 	const genderSubtextOverride = $derived.by(() => {
 		if (question?.id !== 'gender') return undefined;
 		const goal = quiz.answers['goal_type'];
-		const planLabel = goal === 'goal-massa' ? 'ganho de massa' : 'emagrecimento';
-		return `Metabolismo, hormônios e resposta ao treino funcionam de formas diferentes. Isso muda seu plano de ${planLabel}.`;
+		const planLabel =
+			goal === 'goal-massa'
+				? 'ganho de massa'
+				: 'emagrecimento';
+		return `Homens e mulheres têm metabolismos diferentes. Isso afeta diretamente seu plano de ${planLabel}.`;
 	});
 
-	// success_metrics: title with "no seu objetivo"
-	const successMetricsTitleOverride = $derived.by(() => {
-		if (question?.id !== 'success_metrics') return undefined;
-		return 'Como você vai saber que está progredindo no seu objetivo?';
+	// life_impact: título dinâmico com objetivo + kg (ex.: "quando você emagrecer 10kg?")
+	const lifeImpactTitleOverride = $derived.by(() => {
+		if (question?.id !== 'life_impact') return undefined;
+		const goal = quiz.answers['goal_type'] as string | undefined;
+		const current = quiz.answers['weight_current_kg'];
+		const goalKg = quiz.answers['weight_goal_kg'];
+		const currentNum = typeof current === 'string' ? parseFloat(current) : NaN;
+		const goalNum = typeof goalKg === 'string' ? parseFloat(goalKg) : NaN;
+		const kg = !isNaN(currentNum) && !isNaN(goalNum) ? Math.round(Math.abs(goalNum - currentNum)) : 0;
+		const verbo =
+			goal === 'goal-massa'
+				? 'ganhar'
+				: goal === 'goal-emagrecer'
+					? 'emagrecer'
+					: 'alcançar seu objetivo';
+		if (kg > 0 && (goal === 'goal-emagrecer' || goal === 'goal-massa')) {
+			return `O que mais mudaria na sua vida quando você ${verbo} ${kg}kg?`;
+		}
+		return `O que mais mudaria na sua vida quando você ${verbo}?`;
+	});
+
+	// event_type: título dinâmico com objetivo (ex.: "te motivando a emagrecer agora?")
+	const eventTypeTitleOverride = $derived.by(() => {
+		if (question?.id !== 'event_type') return undefined;
+		const goal = quiz.answers['goal_type'] as string | undefined;
+		const objetivo =
+			goal === 'goal-emagrecer'
+				? 'emagrecer'
+				: goal === 'goal-massa'
+					? 'ganhar massa'
+					: 'alcançar seu objetivo';
+		return `Tem algum evento especial te motivando a ${objetivo} agora?`;
+	});
+
+	// readiness: título dinâmico com peso objetivo (ex.: "chegar em 68kg?")
+	const readinessTitleOverride = $derived.by(() => {
+		if (question?.id !== 'readiness') return undefined;
+		const goalKg = quiz.answers['weight_goal_kg'];
+		const goalNum = typeof goalKg === 'string' ? parseFloat(goalKg) : NaN;
+		const kg = !isNaN(goalNum) && goalNum > 0 ? Math.round(goalNum) : null;
+		const text = kg != null
+			? `O quanto você está pronto(a) para fazer pequenos ajustes e chegar em ${kg}kg?`
+			: 'O quanto você está pronto(a) para fazer pequenos ajustes e chegar ao seu objetivo?';
+		return g(text);
+	});
+
+	// Helpers para personalizações dinâmicas
+	const _currentKgNum = $derived.by(() => {
+		const v = quiz.answers['weight_current_kg'];
+		const n = typeof v === 'string' ? parseFloat(v) : NaN;
+		return Number.isFinite(n) && n > 0 ? Math.round(n) : null;
+	});
+	const _goalKgNum = $derived.by(() => {
+		const v = quiz.answers['weight_goal_kg'];
+		const n = typeof v === 'string' ? parseFloat(v) : NaN;
+		return Number.isFinite(n) && n > 0 ? Math.round(n) : null;
+	});
+	const _goal = $derived(quiz.answers['goal_type'] as string | undefined);
+	const _goalLabel = $derived(
+		_goal === 'goal-emagrecer' ? 'emagrecer' : _goal === 'goal-massa' ? 'ganhar massa' : null
+	);
+
+	// Personalized question: aplica title + subtext overrides sobre gq
+	const pq = $derived.by(() => {
+		const base = gq ?? question;
+		if (!base) return base;
+		let text: string = base.text;
+		let subtext: string | undefined = base.subtext;
+		switch (base.id) {
+			case 'weight_goal_kg':
+				if (_currentKgNum) {
+					subtext = `Você está em ${_currentKgNum}kg. Vamos calcular o que você precisa por dia para chegar ao seu objetivo.`;
+				}
+				break;
+			case 'timeframe':
+				if (_currentKgNum && _goalKgNum) {
+					subtext = `Para ir de ${_currentKgNum}kg a ${_goalKgNum}kg, vamos definir o ritmo ideal para você.`;
+				}
+				break;
+			case 'focus_areas':
+				if (_goal === 'goal-massa') {
+					text = 'Qual grupo muscular você mais quer desenvolver?';
+					subtext = 'Vamos considerar essa informação no seu plano para acelerar o processo.';
+				} else if (_goal === 'goal-emagrecer') {
+					text = 'Qual área do seu corpo mais te incomoda hoje?';
+					subtext = 'Vamos considerar essa informação no seu plano para acelerar o processo.';
+				}
+				break;
+			case 'activity_level':
+				if (_goalLabel) {
+					subtext = `Isso define diretamente quantas calorias você pode consumir por dia para ${_goalLabel}.`;
+				}
+				break;
+			case 'water_intake':
+				if (_goal === 'goal-emagrecer') {
+					subtext = 'A hidratação reduz a fome e acelera o metabolismo. dois aliados diretos para emagrecer.';
+				} else if (_goal === 'goal-massa') {
+					subtext = 'A hidratação é essencial para a síntese muscular e o seu metabolismo.';
+				}
+				break;
+		}
+		if (text === base.text && subtext === base.subtext) return base;
+		return { ...base, text: g(text), subtext };
 	});
 
 	// All steps use same CTA: "Continuar" with thin arrow on the right
@@ -153,14 +296,6 @@
 		trackQuestionAnswer(questionId, value);
 		if (isSingleChoiceQuestion) {
 			if (!question) return;
-			// Ao selecionar "Nenhum" no evento, vai direto para o carregamento (pula event_date e resto)
-			const selectedEventNenhuma =
-				questionId === 'event_type' &&
-				(value === 'event-nenhuma' || (Array.isArray(value) && value[0] === 'event-nenhuma'));
-			if (selectedEventNenhuma) {
-				queueMicrotask(() => handleNext(null, true));
-				return;
-			}
 			// Calcula próximo com a resposta já aplicada, para não depender de estado reativo no callback
 			const newAnswers = { ...quiz.answers, [questionId]: value };
 			const visible = computeVisibleQuestions(quizConfig.questions, newAnswers);
@@ -201,7 +336,7 @@
 			try {
 				quizStore.complete();
 				trackQuizComplete('');
-				await goto('/carregando');
+				await goto('/nome');
 			} finally {
 				advancing = false;
 			}
@@ -228,27 +363,29 @@
 {#if question}
 	<!-- Question content — extra padding when Next button is visible; info_medication: alinhado no topo -->
 	<div
-		class="flex-1 flex flex-col min-h-0 max-w-lg mx-auto w-full px-4 pt-8 {showNextButton ? 'pb-32' : 'pb-8'} {question.id === 'info_medication'
+		class="flex-1 flex flex-col min-h-0 max-w-lg mx-auto w-full px-4 pt-4 {showNextButton ? 'pb-32' : 'pb-8'} {question.id === 'info_medication'
 			? 'justify-start'
-			: question.type === 'microresult'
+			: question.type === 'microresult' || question.type === 'feature_info'
 				? 'justify-center'
 				: ''}"
 	>
 		<TransitionWrapper key={question.id}>
 			{#if question.type === 'info'}
-				<InfoScreen {question} center={question.id === 'info_medication'} />
+				<InfoScreen question={pq ?? question} center={question.id === 'info_medication'} />
 			{:else if question.type === 'microresult'}
-				<MicroResultScreen {question} answers={quiz.answers} />
+				<MicroResultScreen {question} answers={quiz.answers} onMr4LoadingComplete={() => (mr4LoadingComplete = true)} />
+			{:else if question.type === 'feature_info'}
+				<FeatureInfoScreen {question} answers={quiz.answers} />
 			{:else if question.type === 'number'}
 				<QuestionInputNumber
-					{question}
+					question={pq ?? question}
 					value={typeof currentAnswer === 'string' ? currentAnswer : undefined}
 					onSelect={(id, val) => handleSelect(id, val)}
 				/>
 			{:else if question.type === 'date'}
 				<div class="flex flex-col gap-4">
 					<QuestionInputDate
-						{question}
+						question={pq ?? question}
 						value={typeof currentAnswer === 'string' ? currentAnswer : undefined}
 						onSelect={(id, val) => handleSelect(id, val)}
 						titleOverride={eventDateTitle}
@@ -259,7 +396,7 @@
 								type="button"
 								onclick={skipEventDateAndNext}
 								disabled={advancing}
-								class="text-white text-sm underline disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+								class="text-black text-sm underline disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
 							>
 								Pular pergunta
 							</button>
@@ -268,42 +405,42 @@
 				</div>
 			{:else if question.type === 'text'}
 				<QuestionInputText
-					{question}
+					question={pq ?? question}
 					value={typeof currentAnswer === 'string' ? currentAnswer : undefined}
 					onSelect={(id, val) => handleSelect(id, val)}
 					titleOverride={whatsappTitle}
 				/>
 			{:else if question.type === 'slider'}
 				<QuestionSlider
-					{question}
+					question={pq ?? question}
 					value={typeof currentAnswer === 'string' ? currentAnswer : undefined}
 					onSelect={(id, val) => handleSelect(id, val)}
 				/>
 			{:else if question.type === 'ruler'}
 				{#if question.id === 'weight_current_kg'}
 					<QuestionWeightCurrent
-						{question}
+						question={pq ?? question}
 						value={typeof currentAnswer === 'string' ? currentAnswer : undefined}
 						onSelect={(id, val) => handleSelect(id, val)}
 						answers={quiz.answers}
 					/>
 				{:else if question.id === 'weight_goal_kg'}
 					<QuestionWeightGoal
-						{question}
+						question={pq ?? question}
 						value={typeof currentAnswer === 'string' ? currentAnswer : undefined}
 						onSelect={(id, val) => handleSelect(id, val)}
 						answers={quiz.answers}
 					/>
 				{:else}
 					<QuestionRuler
-						{question}
+						question={pq ?? question}
 						value={typeof currentAnswer === 'string' ? currentAnswer : undefined}
 						onSelect={(id, val) => handleSelect(id, val)}
 					/>
 				{/if}
 			{:else if question.type === 'body_fat_grid'}
 				<QuestionBodyFatGrid
-					{question}
+					question={pq ?? question}
 					genderAnswer={typeof quiz.answers['gender'] === 'string' ? quiz.answers['gender'] : undefined}
 					selectedValue={typeof currentAnswer === 'string' ? currentAnswer : undefined}
 					beforeStage={bodyFatBeforeStage}
@@ -311,10 +448,10 @@
 				/>
 			{:else}
 				<QuestionCard
-					{question}
+					question={pq ?? question}
 					selectedValue={currentAnswer}
 					onSelect={handleSelect}
-					titleOverride={successMetricsTitleOverride}
+					titleOverride={readinessTitleOverride ?? lifeImpactTitleOverride ?? eventTypeTitleOverride}
 					subtextOverride={genderSubtextOverride}
 				/>
 			{/if}
@@ -322,14 +459,14 @@
 	</div>
 
 	<!-- Fixed bottom box — hidden for single choice. Botão entra na cascata (delay 300ms entre itens) em microresult. -->
-	{#if showNextButton}
-		<div class="fixed bottom-0 left-0 right-0 bg-bg">
+	{#if showNextButton && (question?.id !== 'mr-4' || mr4LoadingComplete)}
+		<div class="fixed bottom-0 left-0 right-0">
 			<div class="max-w-lg mx-auto w-full px-4 pt-4 pb-8">
 			<button
 				type="button"
 				onclick={() => handleNext()}
 				disabled={!canGoNext || navigating.from != null || advancing}
-				class="w-full h-[60px] flex items-center justify-center gap-2 rounded-2xl font-bold text-base bg-accent text-bg transition-all duration-200 active:scale-[0.98] disabled:opacity-30 disabled:pointer-events-none hover:bg-accent-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+				class="w-full h-[60px] flex items-center justify-center gap-2 rounded-2xl font-bold text-base bg-accent text-on-primary transition-all duration-200 active:scale-[0.98] disabled:opacity-30 disabled:pointer-events-none hover:bg-accent-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
 				in:fade={{ duration: 400, delay: buttonCascadeDelay }}
 				out:fade={{ duration: 200 }}
 			>

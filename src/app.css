@@ -1,18 +1,53 @@
 @import 'tailwindcss';
 
+/* Zuppy – Design tokens (guia de estilo) */
 @theme {
-	--color-bg: #0E0E0E;
-	--color-surface: #161616;
-	--color-surface-2: #1E1E1E;
-	--color-heading: #FFFFFF;
-	--color-body: #B3B3B3;
-	--color-muted: #555555;
-	--color-accent: #9DBB54;
-	--color-accent-dark: #8BAF45;
-	--color-line: #272727;
-	/** Farol estilo de vida: laranja para “Médio” */
-	--color-farol-orange: #f97316;
-	--color-farol-red: #ef4444;
+	/* Primária e texto */
+	--color-primary: #0A2305;
+	--color-text: #1a1a1a;
+	--color-text-muted: #666;
+	--color-text-secondary: #6d6d72;
+	--color-text-soft: #8e8e93;
+	--color-placeholder: #c7c7cc;
+
+	/* Backgrounds */
+	--color-bg: #f2f2f7;
+	--color-surface: #ffffff;
+	--color-surface-2: #fafafa;
+	--color-overlay-green: rgba(10, 35, 5, 0.08);
+
+	/* Botão primário: texto branco sobre verde */
+	--color-accent: #0A2305;
+	--color-accent-dark: #061a03;
+	--color-on-primary: #ffffff;
+
+	/* Texto (aliases para componentes) */
+	--color-heading: #0A2305;
+	--color-body: #1a1a1a;
+	--color-muted: #666;
+
+	/* Bordas e divisórias */
+	--color-line: #e5e5ea;
+	--color-border: #aeaeb2;
+	--color-divider: #d1d1d6;
+
+	/* Semânticas */
+	--color-success: #34c759;
+	--color-success-dark: #248a3d;
+	--color-error: #FF3B30;
+	--color-error-dark: #d32f2f;
+	--color-warning: #e68600;
+	--color-warning-alt: #f59e0b;
+
+	/* Farol / indicadores */
+	--color-farol-orange: #e68600;
+	--color-farol-red: #FF3B30;
+
+	/* Nutrição (barras) */
+	--color-nutrition-orange: #F47A3A;
+	--color-nutrition-yellow: #F4E84A;
+	--color-nutrition-green: #8ED33A;
+	--color-nutrition-green-dark: #3a6b14;
 }
 
 :root {
@@ -28,24 +63,36 @@
 }
 
 html {
-	scrollbar-gutter: stable;
+	overflow-x: hidden;
+	/* Mesmo degradê do body para não aparecer faixa branca na lateral ao rolar */
+	background: linear-gradient(to bottom, rgba(142, 211, 58, 0.1) 0%, rgba(142, 211, 58, 0) 100%), #f2f2f7;
+	background-attachment: fixed;
 }
 
 html,
 body {
 	height: 100%;
+	min-height: 100%;
 	font-family: var(--font-sans);
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
-	background-color: #0E0E0E;
-	color: #B3B3B3;
+	/* Degradê em todo o fundo: 8ED33A 10% no topo → 0% no fim. fixed = ocupa a tela toda ao rolar. */
+	background: linear-gradient(to bottom, rgba(142, 211, 58, 0.1) 0%, rgba(142, 211, 58, 0) 100%), #f2f2f7;
+	background-attachment: fixed;
+	color: #1a1a1a;
 }
 
 body {
+	overflow-x: hidden;
 	padding-top: var(--safe-top);
 	padding-bottom: var(--safe-bottom);
 	padding-left: var(--safe-left);
 	padding-right: var(--safe-right);
+}
+
+/* Mesmo degradê do app para header fixo (evita barra branca) */
+.header-bg {
+	background: linear-gradient(to bottom, rgba(142, 211, 58, 0.1) 0%, rgba(142, 211, 58, 0) 100%), #f2f2f7;
 }
 
 @keyframes shimmer {
@@ -66,7 +113,7 @@ body {
 	animation: shimmer 3s ease-in-out infinite;
 }
 
-/* Range slider: track and thumb aligned with identity (accent #9DBB54, track #272727) */
+/* Range slider: track e thumb com identidade Zuppy (primária #0A2305) */
 input[type='range'] {
 	accent-color: var(--color-accent);
 }
@@ -110,4 +157,10 @@ input[type='range']::-moz-range-thumb {
 	box-shadow: none;
 	cursor: pointer;
 	opacity: 0;
+}
+
+/* Ajuste tipográfico específico para parágrafos base do quiz */
+p.text-base {
+	font-size: 14px;
+	line-height: 14px;
 }

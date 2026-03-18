@@ -16,7 +16,7 @@
 	const ctaText = $derived(question.ctaText ?? 'Continuar');
 </script>
 
-<div class="flex flex-col {center ? 'items-start text-left max-w-md w-full gap-[50px]' : 'gap-6'}">
+<div class="flex flex-col {center ? 'items-start text-left max-w-md w-full gap-[25px]' : 'gap-6'}">
 	<div class="{center ? 'space-y-2 text-left w-full' : 'space-y-3'}">
 		{#if tag}
 			<span class="inline-block px-3 py-1.5 text-xs font-medium rounded-full bg-accent/15 text-accent">

@@ -6,7 +6,7 @@ export interface PostQuizState {
 	whatsapp: string;
 }
 
-const SESSION_KEY = 'lotz-post-quiz-state';
+const SESSION_KEY = 'zuppy-post-quiz-state';
 
 const INITIAL: PostQuizState = {
 	name: '',

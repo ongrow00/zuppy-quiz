@@ -11,10 +11,10 @@
 </script>
 
 <svelte:head>
-	<title>Lotz</title>
-	<meta name="description" content="Protocolo Milimétrico Lotz — seu plano personalizado." />
+	<title>Zuppy</title>
+	<meta name="description" content="Zuppy — seu plano personalizado." />
 </svelte:head>
 
-<div class="min-h-screen flex flex-col bg-bg">
+<div class="min-h-screen flex flex-col">
 	{@render children()}
 </div>

@@ -30,9 +30,9 @@
 	<!-- Track (dark, 2px) -->
 	<div class="absolute inset-x-0 top-1/2 -translate-y-1/2 h-0.5 bg-line rounded-full"></div>
 
-	<!-- Fill (green, 2px, continuous) -->
+	<!-- Fill (verde claro, 2px, continuous) -->
 	<div
-		class="absolute left-0 top-1/2 -translate-y-1/2 h-0.5 bg-accent rounded-full transition-[width] duration-300 ease-out"
+		class="absolute left-0 top-1/2 -translate-y-1/2 h-0.5 bg-nutrition-green rounded-full transition-[width] duration-300 ease-out"
 		style="width: {clamped}%"
 	></div>
 
@@ -41,11 +41,11 @@
 		{@const isLast = i === positions.length - 1}
 		<div
 			class="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 rounded-full flex items-center justify-center border-2 border-bg transition-colors duration-300
-				{isLast ? 'step-icon-shimmer bg-accent' : reached(pos) ? 'bg-accent' : 'bg-[#222222]'}"
+				{isLast ? 'step-icon-shimmer bg-nutrition-green' : reached(pos) ? 'bg-nutrition-green' : 'bg-line'}"
 			style="left: {pos}%"
 		>
 			<svg
-				class="w-2.5 h-2.5 transition-colors duration-300 shrink-0 {isLast || reached(pos) ? 'text-bg' : 'text-[#666666]'}"
+				class="w-2.5 h-2.5 transition-colors duration-300 shrink-0 {isLast || reached(pos) ? 'text-accent' : 'text-muted'}"
 				viewBox="0 0 24 24"
 				fill="currentColor"
 				aria-hidden="true"
@@ -64,17 +64,18 @@
 
 <style>
 	.step-icon-shimmer {
+		background-color: var(--color-nutrition-green);
 		animation: step-shimmer 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 	}
 	@keyframes step-shimmer {
 		0%,
 		100% {
-			box-shadow: 0 0 0 0 rgba(157, 187, 84, 0.5), 0 0 10px 2px rgba(157, 187, 84, 0.25);
+			box-shadow: 0 0 0 0 rgba(142, 211, 58, 0.6), 0 0 10px 2px rgba(142, 211, 58, 0.35);
 			opacity: 1;
 		}
 		50% {
-			box-shadow: 0 0 0 6px rgba(157, 187, 84, 0), 0 0 18px 4px rgba(157, 187, 84, 0.12);
-			opacity: 0.95;
+			box-shadow: 0 0 0 6px rgba(142, 211, 58, 0.25), 0 0 18px 4px rgba(142, 211, 58, 0.3);
+			opacity: 1;
 		}
 	}
 </style>

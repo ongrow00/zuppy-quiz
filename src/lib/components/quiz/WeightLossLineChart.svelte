@@ -1,46 +1,76 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { browser } from '$app/environment';
 
 	interface Props {
 		currentKg: number;
 		goalKg: number;
 		weeks: number;
-		/** Oculta os rótulos "Semana 1" / "Semana N" no eixo */
 		hideAxisLabels?: boolean;
 	}
 
 	let { currentKg, goalKg, weeks, hideAxisLabels = false }: Props = $props();
 
-	const weeksDisplay = Math.max(1, weeks);
-	const CHART_HEIGHT = 200;
-	const CHART_WIDTH = 340;
-	const PAD_X = 0;
-	const PAD_Y_TOP = 44;
-	const PAD_Y_BOTTOM = 32;
-	const graphWidth = CHART_WIDTH - PAD_X * 2;
-	const graphHeight = CHART_HEIGHT - PAD_Y_TOP - PAD_Y_BOTTOM;
+	// ─── Layout ───────────────────────────────────────────────
+	const W = 340;
+	const H = 200;
+	const PAD_TOP    = 52;   // espaço para label "XX kg" em cima
+	const PAD_BOTTOM = 28;   // espaço para eixo X
+	const PAD_LEFT   = 0;
+	const PAD_RIGHT  = 0;
 
-	const minKg = Math.min(currentKg, goalKg);
-	const maxKg = Math.max(currentKg, goalKg);
-	const range = maxKg - minKg || 1;
-	const yScale = (kg: number) => PAD_Y_TOP + (maxKg - kg) / range * graphHeight;
-	const xStart = PAD_X;
-	const xEnd = CHART_WIDTH - PAD_X;
+	const graphW = W - PAD_LEFT - PAD_RIGHT;
+	const graphH = H - PAD_TOP - PAD_BOTTOM;
+
+	// Goal point at 62% width — flat maintain line after
+	const GOAL_RATIO = 0.62;
+	const xStart = PAD_LEFT;
+	const xGoal  = PAD_LEFT + graphW * GOAL_RATIO;
+	const xEnd   = W - PAD_RIGHT;
+
+	const isLoss = goalKg < currentKg;
+	const minKg  = Math.min(currentKg, goalKg);
+	const maxKg  = Math.max(currentKg, goalKg);
+	const range  = maxKg - minKg || 1;
+
+	// Extra vertical padding so curve doesn't hug edges
+	const VPAD = graphH * 0.1;
+	function yScale(kg: number): number {
+		return PAD_TOP + VPAD + (maxKg - kg) / range * (graphH - VPAD * 2);
+	}
+
 	const yStart = yScale(currentKg);
-	const yEnd = yScale(goalKg);
-	const cp1X = xStart + graphWidth * 0.35;
-	const cp1Y = yStart;
-	const cp2X = xEnd - graphWidth * 0.35;
-	const cp2Y = yEnd;
-	const pathD = `M ${xStart} ${yStart} C ${cp1X} ${cp1Y} ${cp2X} ${cp2Y} ${xEnd} ${yEnd}`;
-	const areaD = `${pathD} L ${xEnd} ${PAD_Y_TOP + graphHeight} L ${xStart} ${PAD_Y_TOP + graphHeight} Z`;
+	const yGoal  = yScale(goalKg);
 
-	const gridLines = [1, 2, 3, 4];
-	const dotRadius = 7;
-	const labelWidth = 52;
-	const labelHeight = 24;
-	const axisPadPercent = (PAD_X / CHART_WIDTH) * 100;
+	// Cubic bezier: smooth S-shape
+	const cp1x = xStart + (xGoal - xStart) * 0.42;
+	const cp1y = yStart;
+	const cp2x = xStart + (xGoal - xStart) * 0.58;
+	const cp2y = yGoal;
 
+	const curvePath = `M ${xStart} ${yStart} C ${cp1x} ${cp1y} ${cp2x} ${cp2y} ${xGoal} ${yGoal}`;
+
+	// Area under curve + flat maintain area
+	const areaPath = `${curvePath} L ${xEnd} ${yGoal} L ${xEnd} ${H - PAD_BOTTOM} L ${xStart} ${H - PAD_BOTTOM} Z`;
+
+	// ─── Goal date label ──────────────────────────────────────
+	const MONTHS_PT = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+	const goalDateLabel = $derived.by(() => {
+		if (!browser) return '';
+		const d = new Date();
+		d.setDate(d.getDate() + Math.max(1, weeks) * 7);
+		return MONTHS_PT[d.getMonth()] + ' ' + d.getFullYear();
+	});
+
+	// ─── Bubble "Goal / XX kg" ────────────────────────────────
+	const BUBBLE_W  = 72;
+	const BUBBLE_H  = 46;
+	const BUBBLE_R  = 10;
+	// Clamp so bubble doesn't overflow left/right
+	const bubbleX = Math.min(Math.max(xGoal - BUBBLE_W / 2, 4), W - BUBBLE_W - 4);
+	const bubbleY = yGoal - BUBBLE_H - 14;
+
+	// ─── Animation ───────────────────────────────────────────
 	let lineEl: SVGPathElement | undefined = $state();
 	let totalLength = $state(1000);
 	let animate = $state(false);
@@ -51,202 +81,228 @@
 	});
 </script>
 
-<div
-	class="flex flex-col w-full"
-	role="img"
-	aria-label="Gráfico de evolução do peso da semana 1 à semana {weeksDisplay}"
->
-	<div class="relative w-full" style="min-height: {CHART_HEIGHT}px;">
+<div class="flex flex-col w-full">
+	<div
+		class="relative w-full"
+		style="height: {H}px;"
+		role="img"
+		aria-label="Gráfico de evolução do peso até {goalKg}kg"
+	>
 		<svg
 			width="100%"
-			height={CHART_HEIGHT}
-			viewBox="0 0 {CHART_WIDTH} {CHART_HEIGHT}"
+			height={H}
+			viewBox="0 0 {W} {H}"
 			class="overflow-visible block"
 			fill="none"
 		>
 		<defs>
-			<linearGradient id="weight-chart-gradient" x1="0" x2="0" y1="0" y2="1">
-				<stop offset="0%" stop-color="var(--color-accent)" stop-opacity="0.2" />
-				<stop offset="100%" stop-color="var(--color-accent)" stop-opacity="0" />
+			<!-- Gradient under curve (green → transparent) -->
+			<linearGradient id="wlc-area-grad" x1="0" x2="0" y1="0" y2="1">
+				<stop offset="0%"   stop-color="#9DBB54" stop-opacity="0.22" />
+				<stop offset="100%" stop-color="#9DBB54" stop-opacity="0.02" />
 			</linearGradient>
-			<filter id="weight-line-glow" x="-20%" y="-20%" width="140%" height="140%">
-				<feGaussianBlur stdDeviation="2" result="blur" />
-				<feMerge>
-					<feMergeNode in="blur" />
-					<feMergeNode in="SourceGraphic" />
-				</feMerge>
-			</filter>
-			<filter id="weight-dot-shadow" x="-50%" y="-50%" width="200%" height="200%">
-				<feDropShadow dx="0" dy="1" stdDeviation="2" flood-color="var(--color-accent)" flood-opacity="0.4" />
-			</filter>
-			<clipPath id="weight-area-reveal">
+
+			<!-- Clip that reveals left-to-right on animate -->
+			<clipPath id="wlc-reveal">
 				<rect
-					x={xStart}
-					y="0"
+					x={xStart} y="0"
 					width={animate ? (xEnd - xStart) : 0}
-					height={CHART_HEIGHT + 50}
-					class="chart-clip-rect"
+					height={H}
+					class="wlc-clip-rect"
 				/>
 			</clipPath>
+
+			<filter id="wlc-dot-shadow" x="-60%" y="-60%" width="220%" height="220%">
+				<feDropShadow dx="0" dy="1" stdDeviation="2.5" flood-color="#9DBB54" flood-opacity="0.5" />
+			</filter>
 		</defs>
 
-		<!-- Grid horizontal -->
-		<g
-			stroke="var(--color-line)" stroke-width="0.5" stroke-opacity="0.5"
-			class="chart-grid"
-			class:chart-animate={animate}
-		>
-			{#each gridLines as _, i}
-				{@const y = PAD_Y_TOP + (i + 1) * (graphHeight / 5)}
-				<line x1={xStart} y1={y} x2={CHART_WIDTH - PAD_X} y2={y} stroke-dasharray="6 4" />
-			{/each}
-		</g>
-
-		<!-- Área preenchida sob a curva -->
+		<!-- ── Area fill ── -->
 		<path
-			d={areaD}
-			fill="url(#weight-chart-gradient)"
-			clip-path="url(#weight-area-reveal)"
+			d={areaPath}
+			fill="url(#wlc-area-grad)"
+			clip-path="url(#wlc-reveal)"
 		/>
 
-		<!-- Linha de evolução com glow -->
+		<!-- ── Maintain weight flat line (green dashed) ── -->
+		<line
+			x1={xGoal} y1={yGoal}
+			x2={xEnd}  y2={yGoal}
+			stroke="#9DBB54"
+			stroke-width="2"
+			stroke-dasharray="5 4"
+			stroke-linecap="round"
+			clip-path="url(#wlc-reveal)"
+		/>
+
+		<!-- ── Main loss curve ── -->
 		<path
 			bind:this={lineEl}
-			d={pathD}
-			stroke="var(--color-accent)"
+			d={curvePath}
+			stroke="#9DBB54"
 			stroke-width="2.5"
 			stroke-linecap="round"
 			stroke-linejoin="round"
-			filter="url(#weight-line-glow)"
-			class="chart-line"
+			class="wlc-line"
 			style="stroke-dasharray: {totalLength}; stroke-dashoffset: {animate ? 0 : totalLength};"
 		/>
 
-		<!-- Marcador início -->
-		<g class="chart-marker-start" class:chart-animate={animate}>
-			<circle
-				cx={xStart}
-				cy={yStart}
-				r={dotRadius + 5}
-				class="fill-[var(--color-accent)]"
-				opacity="0.2"
-			/>
-			<circle
-				cx={xStart}
-				cy={yStart}
-				r={dotRadius}
-				class="fill-[var(--color-accent)] stroke-[var(--color-bg)]"
-				stroke-width="2"
-				filter="url(#weight-dot-shadow)"
-			/>
-			<rect
-				x={xStart - labelWidth / 2}
-				y={yStart - labelHeight - 10}
-				width={labelWidth}
-				height={labelHeight}
-				rx="8"
-				ry="8"
-				class="fill-surface-2 stroke-line/60"
-				stroke-width="0.5"
-			/>
+		<!-- ── Start dot + label ── -->
+		<g class="wlc-marker-start" class:wlc-animate={animate}>
+			<circle cx={xStart} cy={yStart} r={14} fill="#9DBB54" fill-opacity="0.12" />
+			<circle cx={xStart} cy={yStart} r={6}  fill="#9DBB54" stroke="white" stroke-width="2" filter="url(#wlc-dot-shadow)" />
+			<!-- Label: currentKg above dot -->
 			<text
-				x={xStart}
-				y={yStart - labelHeight / 2 - 2}
-				text-anchor="middle"
-				class="fill-heading text-[13px] font-semibold tabular-nums"
-			>
-				{currentKg} kg
-			</text>
+				x={xStart + 14}
+				y={yStart - 6}
+				text-anchor="start"
+				font-size="13"
+				font-weight="700"
+				fill="var(--color-heading, #111)"
+				font-family="inherit"
+			>{currentKg} kg</text>
 		</g>
 
-		<!-- Marcador fim -->
-		<g class="chart-marker-end" class:chart-animate={animate}>
-			<circle
-				cx={xEnd}
-				cy={yEnd}
-				r={dotRadius + 5}
-				class="fill-[var(--color-accent)]"
-				opacity="0.2"
-			/>
-			<circle
-				cx={xEnd}
-				cy={yEnd}
-				r={dotRadius}
-				class="fill-[var(--color-accent)] stroke-[var(--color-bg)]"
-				stroke-width="2"
-				filter="url(#weight-dot-shadow)"
-			/>
+		<!-- ── Goal dot ── -->
+		<g class="wlc-marker-goal" class:wlc-animate={animate}>
+			<circle cx={xGoal} cy={yGoal} r={14} fill="#9DBB54" fill-opacity="0.15" />
+			<circle cx={xGoal} cy={yGoal} r={7}  fill="#9DBB54" stroke="white" stroke-width="2.5" filter="url(#wlc-dot-shadow)" />
+		</g>
+
+		<!-- ── Goal bubble ── -->
+		<g class="wlc-bubble" class:wlc-animate={animate}>
+			<!-- Shadow -->
 			<rect
-				x={xEnd - labelWidth / 2}
-				y={yEnd - labelHeight - 10}
-				width={labelWidth}
-				height={labelHeight}
-				rx="8"
-				ry="8"
-				class="fill-surface-2 stroke-line/60"
-				stroke-width="0.5"
+				x={bubbleX + 1} y={bubbleY + 2}
+				width={BUBBLE_W} height={BUBBLE_H}
+				rx={BUBBLE_R} ry={BUBBLE_R}
+				fill="#9DBB54" fill-opacity="0.18"
 			/>
+			<!-- Bubble body -->
+			<rect
+				x={bubbleX} y={bubbleY}
+				width={BUBBLE_W} height={BUBBLE_H}
+				rx={BUBBLE_R} ry={BUBBLE_R}
+				fill="#9DBB54"
+			/>
+			<!-- "Goal" text -->
+			<text
+				x={bubbleX + BUBBLE_W / 2}
+				y={bubbleY + 16}
+				text-anchor="middle"
+				font-size="11"
+				font-weight="500"
+				fill="white"
+				fill-opacity="0.9"
+				font-family="inherit"
+			>Meta</text>
+			<!-- Weight text -->
+			<text
+				x={bubbleX + BUBBLE_W / 2}
+				y={bubbleY + 33}
+				text-anchor="middle"
+				font-size="15"
+				font-weight="800"
+				fill="white"
+				font-family="inherit"
+			>{goalKg} kg</text>
+			<!-- Small triangle pointer -->
+			<polygon
+				points="{xGoal - 6},{bubbleY + BUBBLE_H} {xGoal + 6},{bubbleY + BUBBLE_H} {xGoal},{yGoal - 8}"
+				fill="#9DBB54"
+			/>
+		</g>
+
+		<!-- ── "Manter peso" label ── -->
+		<g class="wlc-maintain" class:wlc-animate={animate}>
+			<text
+				x={xEnd - 4}
+				y={yGoal - 10}
+				text-anchor="end"
+				font-size="11"
+				font-weight="600"
+				fill="#9DBB54"
+				font-family="inherit"
+			>Manter peso</text>
+		</g>
+
+		<!-- ── X-axis labels ── -->
+		{#if !hideAxisLabels}
+		<g class="wlc-axis" class:wlc-animate={animate}>
+			<text
+				x={xStart}
+				y={H - 6}
+				text-anchor="start"
+				font-size="11"
+				font-weight="600"
+				fill="var(--color-muted, #888)"
+				font-family="inherit"
+				letter-spacing="0.5"
+			>AGORA</text>
 			<text
 				x={xEnd}
-				y={yEnd - labelHeight / 2 - 2}
-				text-anchor="middle"
-				class="fill-heading text-[13px] font-semibold tabular-nums"
-			>
-				{goalKg} kg
-			</text>
+				y={H - 6}
+				text-anchor="end"
+				font-size="11"
+				font-weight="600"
+				fill="var(--color-muted, #888)"
+				font-family="inherit"
+				letter-spacing="0.5"
+			>{goalDateLabel}</text>
 		</g>
-	</svg>
+		{/if}
+
+		</svg>
 	</div>
-	{#if !hideAxisLabels}
-		<div
-			class="flex justify-between w-full -mt-1 chart-axis"
-			class:chart-animate={animate}
-			style="padding-left: {axisPadPercent}%; padding-right: {axisPadPercent}%;"
-		>
-			<span class="text-xs font-medium text-muted tracking-wide">Semana 1</span>
-			<span class="text-xs font-medium text-muted tracking-wide">Semana {weeksDisplay}</span>
-		</div>
-	{/if}
+	<p
+		class="mt-5 w-full text-center text-muted"
+		style="font-size: 8px; line-height: 8px;"
+	>
+		*Com base nos dados de usuários que registram o progresso no aplicativo. Consulte seu médico antes.
+		O gráfico é uma ilustração não personalizada e os resultados podem variar.
+	</p>
 </div>
 
 <style>
-	.chart-line {
-		transition: stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1) 0.15s;
+	.wlc-line {
+		transition: stroke-dashoffset 1.3s cubic-bezier(0.4, 0, 0.2, 1) 0.1s;
+	}
+	.wlc-clip-rect {
+		transition: width 1.3s cubic-bezier(0.4, 0, 0.2, 1) 0.1s;
 	}
 
-	.chart-clip-rect {
-		transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1) 0.15s;
-	}
-
-	.chart-grid {
+	.wlc-marker-start {
 		opacity: 0;
-		transition: opacity 0.5s ease-out;
+		transition: opacity 0.4s ease-out 0.05s;
 	}
-	.chart-grid.chart-animate {
+	.wlc-marker-start.wlc-animate { opacity: 1; }
+
+	.wlc-marker-goal {
+		opacity: 0;
+		transition: opacity 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 1.1s;
+	}
+	.wlc-marker-goal.wlc-animate { opacity: 1; }
+
+	.wlc-bubble {
+		opacity: 0;
+		transform: translateY(6px);
+		transition: opacity 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 1.25s,
+		            transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 1.25s;
+	}
+	.wlc-bubble.wlc-animate {
 		opacity: 1;
+		transform: translateY(0);
 	}
 
-	.chart-marker-start {
+	.wlc-maintain {
 		opacity: 0;
-		transition: opacity 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s;
+		transition: opacity 0.4s ease-out 1.4s;
 	}
-	.chart-marker-start.chart-animate {
-		opacity: 1;
-	}
+	.wlc-maintain.wlc-animate { opacity: 1; }
 
-	.chart-marker-end {
+	.wlc-axis {
 		opacity: 0;
-		transition: opacity 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 1.15s;
+		transition: opacity 0.4s ease-out 0.3s;
 	}
-	.chart-marker-end.chart-animate {
-		opacity: 1;
-	}
-
-	.chart-axis {
-		opacity: 0;
-		transition: opacity 0.4s ease-out 1.2s;
-	}
-	.chart-axis.chart-animate {
-		opacity: 1;
-	}
+	.wlc-axis.wlc-animate { opacity: 1; }
 </style>

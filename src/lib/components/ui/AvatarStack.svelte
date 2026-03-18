@@ -1,25 +1,20 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
+
 	/**
 	 * Pilha de avatares sobrepostos: opcionalmente um círculo com iniciais primeiro, depois as fotos em ordem aleatória.
 	 */
 	const AVATAR_SOURCES = [
-		{ src: '/avatars/terdeli.png', alt: 'Terdeli' },
-		{ src: '/avatars/thiago.png', alt: 'Thiago' },
-		{ src: '/avatars/sabrina.png', alt: 'Sabrina' },
-		{ src: '/avatars/leo.png', alt: 'Leo' },
-		{ src: '/avatars/enaldinho.png', alt: 'Enaldinho' }
+		{ src: '/avatars/zuppy_1.png', alt: '' },
+		{ src: '/avatars/zuppy_2.png', alt: '' },
+		{ src: '/avatars/zuppy_3.png', alt: '' },
+		{ src: '/avatars/zuppy_4.png', alt: '' }
 	] as const;
 
-	/** Shuffle determinístico (mesma ordem no servidor e no cliente) para evitar hydration mismatch. */
-	function shuffleArrayDeterministic<T>(arr: T[], seed = 0x4d794c6f): T[] {
+	function shuffleRandom<T>(arr: T[]): T[] {
 		const out = [...arr];
-		let s = seed;
-		const next = () => {
-			s = (s * 1664525 + 1013904223) >>> 0;
-			return s / 0xffff_ffff;
-		};
 		for (let i = out.length - 1; i > 0; i--) {
-			const j = Math.floor(next() * (i + 1));
+			const j = Math.floor(Math.random() * (i + 1));
 			[out[i], out[j]] = [out[j], out[i]];
 		}
 		return out;
@@ -32,12 +27,18 @@
 		size?: 'sm' | 'md';
 		/** default = tamanho/espaçamento original; large = +20% (usado na página de resultados) */
 		variant?: 'default' | 'large';
+		/** Limita o número de fotos exibidas */
+		max?: number;
 	}
 
-	let { initials = undefined, size = 'md', variant = 'large' }: Props = $props();
+	let { initials = undefined, size = 'md', variant = 'large', max = undefined }: Props = $props();
 
-	// Ordem das fotos fixa (shuffle determinístico) para SSR e cliente baterem na hidratação
-	const shuffledAvatars = $derived(shuffleArrayDeterministic([...AVATAR_SOURCES]));
+	// Ordem fixa na primeira render (SSR/hidratação); após mount, embaralha uma vez por carregamento
+	let avatarsOrder = $state([...AVATAR_SOURCES]);
+	onMount(() => {
+		avatarsOrder = shuffleRandom([...AVATAR_SOURCES]);
+	});
+	const shuffledAvatars = $derived(max !== undefined ? avatarsOrder.slice(0, max) : avatarsOrder);
 
 	const sizeClass = $derived.by(() => {
 		if (variant === 'default') {
@@ -58,7 +59,7 @@
 <div class="flex items-center shrink-0">
 	{#if initials}
 		<div
-			class="rounded-full border border-white/20 overflow-hidden flex-shrink-0 bg-accent/90 flex items-center justify-center font-bold text-bg {sizeClass}"
+			class="rounded-full border border-white/20 overflow-hidden flex-shrink-0 bg-accent/90 flex items-center justify-center font-bold text-on-primary {sizeClass}"
 			style="margin-left: 0; z-index: {total};"
 			aria-hidden="true"
 		>

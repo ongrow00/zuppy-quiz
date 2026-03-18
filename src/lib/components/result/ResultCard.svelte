@@ -40,7 +40,7 @@
 	{#if profile.cta.url}
 		<a
 			href={profile.cta.url}
-			class="inline-flex items-center justify-center w-full max-w-sm px-6 py-4 text-bg font-semibold rounded-2xl transition-all duration-200 active:scale-95"
+			class="inline-flex items-center justify-center w-full max-w-sm px-6 py-4 text-on-primary font-semibold rounded-2xl transition-all duration-200 active:scale-95"
 			style="background-color: {profile.accentColor};"
 		>
 			{profile.cta.text}

@@ -17,7 +17,7 @@
 <button
 	type="submit"
 	disabled={disabled || loading}
-	class="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-2xl text-bg font-bold text-lg bg-accent transition-all duration-200 active:scale-95 disabled:opacity-40 disabled:pointer-events-none hover:bg-accent-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+	class="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-2xl text-on-primary font-bold text-lg bg-accent transition-all duration-200 active:scale-95 disabled:opacity-40 disabled:pointer-events-none hover:bg-accent-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
 >
 	{#if loading}
 		<svg

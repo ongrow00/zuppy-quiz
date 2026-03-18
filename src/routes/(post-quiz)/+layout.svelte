@@ -1,14 +1,22 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
+	import { browser } from '$app/environment';
 	import { fly } from 'svelte/transition';
 	import StepProgressBar from '$lib/components/quiz/StepProgressBar.svelte';
 	import Logo from '$lib/components/ui/Logo.svelte';
+	import StickyDiscountBanner from '$lib/components/ui/StickyDiscountBanner.svelte';
+	import { start as startDiscountCountdown } from '$lib/stores/discount-countdown.store';
 	import { postQuizStore } from '$lib/stores/post-quiz.store';
 
 	let { children } = $props();
+	let scrollContainer = $state<HTMLDivElement | null>(null);
+	let showStickyBanner = $state(false);
+	/** Banner aparece após passar a seção "Suas Metas" (título + BodyBeforeAfterCard + início do NutritionPlanCard) */
+	const STICKY_SCROLL_THRESHOLD = 50;
+	const RESULTS_BANNER_SCROLL_THRESHOLD = 400;
 
-	const POST_QUIZ_STEPS = ['/carregando', '/nome', '/whatsapp', '/results'] as const;
+	const POST_QUIZ_STEPS = ['/carregando', '/nome', '/whatsapp', '/previsao', '/results'] as const;
 
 	const pathname = $derived($page.url.pathname);
 	const currentIndex = $derived(
@@ -16,9 +24,7 @@
 	);
 	const stepIndex = $derived(currentIndex >= 0 ? currentIndex : 0);
 	// Nome, WhatsApp e results: barra sempre 100%
-	const progressPercent = $derived(
-		stepIndex >= 1 ? 100 : ((stepIndex + 1) / POST_QUIZ_STEPS.length) * 100
-	);
+	const progressPercent = $derived(100);
 	const nextUrl = $derived(
 		stepIndex < POST_QUIZ_STEPS.length - 1
 			? POST_QUIZ_STEPS[stepIndex + 1]
@@ -27,27 +33,73 @@
 	const prevUrl = $derived(stepIndex > 0 ? POST_QUIZ_STEPS[stepIndex - 1] : '/resultado');
 
 	const isCarregandoPage = $derived(pathname === '/carregando');
+	const isNomePage = $derived(pathname === '/nome' || pathname.startsWith('/nome/'));
 	const isWhatsappPage = $derived(pathname === '/whatsapp' || pathname.startsWith('/whatsapp/'));
+	const isPrevisaoPage = $derived(pathname === '/previsao' || pathname.startsWith('/previsao/'));
 	const isResultsPage = $derived(pathname === '/results' || pathname.startsWith('/results/'));
+	/** Results: só logo no topo, sem voltar / CTA fixo */
 	const hideNavOnThisPage = $derived(isResultsPage);
-	// Contagem continua do quiz (mr-5 = 13): nome=14, whatsapp=15, results=16
+	const showCounterAndProgress = $derived(false);
+	// Contagem continua do quiz (mr-4 = 13): nome=14, whatsapp=15, results=16
 	const POST_QUIZ_COUNTER_START = 13;
-	const headerCounter = $derived(stepIndex >= 1 ? POST_QUIZ_COUNTER_START + stepIndex : 0);
+	const headerCounter = $derived(POST_QUIZ_COUNTER_START + stepIndex + 1);
 
+	const hasValidName = $derived(($postQuizStore.name || '').trim().length > 0);
 	// WhatsApp obrigatório: só avança com telefone válido (10 ou 11 dígitos: DDD + número)
-	const whatsappDigits = $derived.by(() => {
-		const raw = ($postQuizStore.whatsapp || '').replace(/\D/g, '');
-		const withoutCountry = raw.startsWith('55') && raw.length > 2 ? raw.slice(2) : raw;
-		return withoutCountry.slice(0, 11);
+	// Valida número internacional: total de dígitos >= 9 (código do país + número local mínimo)
+	const hasValidWhatsapp = $derived(
+		($postQuizStore.whatsapp || '').replace(/\D/g, '').length >= 9
+	);
+	const canAdvance = $derived(
+		(!isNomePage || hasValidName) && (!isWhatsappPage || hasValidWhatsapp)
+	);
+
+	/** Código do banner: # + 4 primeiras letras do nome + 4 últimos dígitos do telefone */
+	const discountCode = $derived.by(() => {
+		const name = ($postQuizStore.name || '').trim();
+		const phone = ($postQuizStore.whatsapp || '').replace(/\D/g, '');
+		const nameLetters = name
+			.replace(/[^a-zA-ZÀ-Úà-ú]/g, '')
+			.toLowerCase()
+			.slice(0, 4);
+		const phoneLast4 = phone.slice(-4);
+		const part1 = nameLetters || 'user';
+		const part2 = phoneLast4 || '0000';
+		return '#' + part1 + part2;
 	});
-	const hasValidWhatsapp = $derived(whatsappDigits.length >= 10);
-	const canAdvance = $derived(!isWhatsappPage || hasValidWhatsapp);
+
+	function onScroll() {
+		if (!scrollContainer || !isResultsPage) return;
+		const threshold = isResultsPage ? RESULTS_BANNER_SCROLL_THRESHOLD : STICKY_SCROLL_THRESHOLD;
+		showStickyBanner = scrollContainer.scrollTop >= threshold;
+	}
+
+	$effect(() => {
+		if (!browser) return;
+		const onResults = pathname === '/results' || pathname.startsWith('/results/');
+		document.body.classList.toggle('results-page-scroll-lock', onResults);
+		return () => document.body.classList.remove('results-page-scroll-lock');
+	});
+
+	/** Countdown da oferta: inicia ao entrar na página de resultados e para ao sair. */
+	$effect(() => {
+		if (!browser) return;
+		const onResults = pathname === '/results' || pathname.startsWith('/results/');
+		if (onResults) return startDiscountCountdown();
+	});
 </script>
 
-<div class="min-h-screen flex flex-col bg-bg">
-	<header class="bg-bg px-4 pt-4 pb-3 {!isResultsPage ? 'sticky top-0 z-10' : ''}">
-		<div class="relative flex items-center justify-between mb-3">
-			{#if !hideNavOnThisPage && !isCarregandoPage}
+{#if isResultsPage}
+	<StickyDiscountBanner visible={showStickyBanner} discountCode={discountCode} />
+{/if}
+<div
+	class="{isResultsPage ? 'post-quiz-results-scroll h-dvh flex flex-col overflow-y-auto overflow-x-hidden' : 'h-screen min-h-0 flex flex-col overflow-hidden'}"
+	bind:this={scrollContainer}
+	onscroll={onScroll}
+>
+	<header class="shrink-0 px-4 {isResultsPage ? 'pt-3 pb-2' : 'pt-4 pb-3'}">
+		<div class="relative flex items-center justify-between {isResultsPage ? 'mb-1.5' : 'mb-3'}">
+			{#if !hideNavOnThisPage && !isCarregandoPage && !isResultsPage}
 			<button
 				type="button"
 				onclick={() => goto(prevUrl)}
@@ -72,12 +124,12 @@
 				<Logo />
 			</div>
 
-			{#if !hideNavOnThisPage && !isCarregandoPage}
+			{#if showCounterAndProgress}
 				<div
 					class="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-line bg-transparent shrink-0"
 					aria-label="Contagem"
 				>
-					<svg width="18" height="18" viewBox="0 0 24 24" fill="none" class="text-accent shrink-0" aria-hidden="true">
+					<svg width="18" height="18" viewBox="0 0 24 24" fill="none" class="text-[var(--color-nutrition-green)] shrink-0" aria-hidden="true">
 						<path
 							d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"
 							fill="currentColor"
@@ -94,18 +146,18 @@
 			{/if}
 		</div>
 
-		{#if !hideNavOnThisPage && !isCarregandoPage}
+		{#if showCounterAndProgress}
 		<StepProgressBar percent={progressPercent} steps={4} />
 		{/if}
 	</header>
 
-	<main class="flex-1 flex flex-col min-h-0 overflow-y-auto overflow-x-hidden">
+	<main class="{isResultsPage ? 'flex flex-col' : 'flex-1 flex flex-col min-h-0 overflow-y-auto overflow-x-hidden no-scrollbar'}">
 		<div class="content-transition-root">
 			{#key pathname}
 				<div
 					in:fly={{ x: 30, duration: 260, delay: 40 }}
 					out:fly={{ x: -30, duration: 180 }}
-					class="content-transition-slot max-w-lg mx-auto w-full px-4 pt-8 {isCarregandoPage ? 'pb-8' : hideNavOnThisPage ? 'pb-8' : 'pb-32'}"
+					class="content-transition-slot no-scrollbar max-w-lg mx-auto w-full px-4 {isResultsPage ? 'pt-2' : 'pt-8'} {isCarregandoPage || isResultsPage ? 'pb-2' : hideNavOnThisPage ? 'pb-8' : 'pb-32'}"
 					style="pointer-events: auto;"
 				>
 					{@render children()}
@@ -114,26 +166,19 @@
 		</div>
 	</main>
 
-	{#if !hideNavOnThisPage && !isCarregandoPage}
-	<div class="fixed bottom-0 left-0 right-0 bg-bg">
+	{#if !hideNavOnThisPage && !isCarregandoPage && !isResultsPage}
+	<div class="fixed bottom-0 left-0 right-0">
 		<div class="max-w-lg mx-auto w-full px-4 pt-4 pb-8">
 		<button
 			type="button"
 			onclick={() => goto(nextUrl)}
 			disabled={!canAdvance}
-			class="w-full h-[60px] flex items-center justify-center gap-2 rounded-2xl font-bold text-base bg-accent text-bg transition-all duration-200 active:scale-[0.98] hover:bg-accent-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg disabled:opacity-40 disabled:pointer-events-none {isWhatsappPage ? 'post-quiz-cta' : ''}"
+			class="w-full h-[60px] flex items-center justify-center gap-2 rounded-2xl font-bold text-base bg-accent text-on-primary transition-all duration-200 active:scale-[0.98] hover:bg-accent-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg disabled:opacity-40 disabled:pointer-events-none"
 		>
-			{#if isWhatsappPage}
-				<span>Desbloquear</span>
-				<svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-					<path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-				</svg>
-			{:else}
-				<span>Continuar</span>
-				<svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true">
-					<path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/>
-				</svg>
-			{/if}
+			<span>Ver Meu Plano</span>
+			<svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true">
+				<path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/>
+			</svg>
 		</button>
 		</div>
 	</div>
@@ -141,6 +186,19 @@
 </div>
 
 <style>
+	:global(body.results-page-scroll-lock) {
+		overflow: hidden;
+	}
+	:global(.no-scrollbar)::-webkit-scrollbar {
+		width: 0;
+		height: 0;
+	}
+	:global(.no-scrollbar) {
+		-ms-overflow-style: none;
+		scrollbar-width: none;
+		scrollbar-gutter: none;
+	}
+
 	.content-transition-root {
 		display: grid;
 		grid-template-rows: 1fr;
@@ -153,45 +211,35 @@
 		grid-row: 1;
 		grid-column: 1;
 		min-width: 0;
+		min-height: 0;
 		justify-self: center;
+		align-self: stretch;
 	}
 	.content-transition-slot {
 		display: flex;
 		flex-direction: column;
 		align-items: stretch;
-		overflow: visible;
+		min-height: 0;
+		overflow-y: auto;
+		overflow-x: hidden;
 		width: 100%;
 		max-width: 32rem;
 		box-sizing: border-box;
 	}
+	/* Na results, o scroll é no container externo para o banner fixo funcionar */
+	:global(.post-quiz-results-scroll) .content-transition-root {
+		flex: none;
+		min-height: auto;
+	}
+	:global(.post-quiz-results-scroll) .content-transition-slot {
+		overflow-y: visible;
+		min-height: auto;
+	}
+	:global(.post-quiz-results-scroll) .content-transition-slot > * {
+		min-height: 0;
+	}
+	.content-transition-slot > * {
+		min-height: 100%;
+	}
 
-	.post-quiz-cta {
-		position: relative;
-		overflow: hidden;
-	}
-	.post-quiz-cta::after {
-		content: '';
-		position: absolute;
-		inset: 0;
-		width: 60%;
-		background: linear-gradient(
-			100deg,
-			transparent 0%,
-			transparent 40%,
-			rgba(255, 255, 255, 0.25) 50%,
-			transparent 60%,
-			transparent 100%
-		);
-		animation: post-quiz-cta-shimmer 2.5s ease-in-out infinite;
-		pointer-events: none;
-		border-radius: inherit;
-	}
-	@keyframes post-quiz-cta-shimmer {
-		0% {
-			transform: translateX(-100%) skewX(-12deg);
-		}
-		100% {
-			transform: translateX(200%) skewX(-12deg);
-		}
-	}
 </style>

@@ -213,7 +213,7 @@
 	<div class="w-full space-y-1 mb-1">
 		<h2 class="text-2xl font-extrabold text-heading leading-tight">{question.text}</h2>
 		{#if question.subtext}
-			<p class="text-sm text-body leading-relaxed">{question.subtext}</p>
+			<p class="text-sm text-body leading-[14px]">{question.subtext}</p>
 		{/if}
 	</div>
 
@@ -248,7 +248,7 @@
 	{#if goalLegend && value !== undefined && value !== ''}
 		<div class="w-full flex items-center justify-center gap-3 pt-5 pb-5" role="status" aria-live="polite">
 			<span class="text-lg shrink-0 mt-0.5" aria-hidden="true">{goalLegend.icon}</span>
-			<p class="text-sm text-heading leading-snug min-w-0">
+			<p class="text-sm text-heading leading-none min-w-0">
 				{goalLegend.title}
 				<span
 					class="font-semibold {goalLegend.highlightColor === 'green'

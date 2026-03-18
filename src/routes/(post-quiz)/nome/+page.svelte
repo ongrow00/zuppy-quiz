@@ -10,7 +10,7 @@
 </script>
 
 <svelte:head>
-	<title>Qual é o seu nome? | Lotz</title>
+	<title>Qual é o seu nome? | Zuppy</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">

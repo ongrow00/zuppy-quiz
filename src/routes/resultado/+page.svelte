@@ -17,15 +17,14 @@
 </script>
 
 <svelte:head>
-	<title>Lotz</title>
+	<title>Zuppy</title>
 </svelte:head>
 
-<div class="min-h-screen bg-bg pb-16">
+<div class="min-h-screen pb-16">
+	<header class="sticky top-0 z-10 flex justify-center pt-6 pb-4 px-4 bg-bg">
+		<Logo class="text-heading" />
+	</header>
 	<main class="max-w-lg mx-auto px-4 pt-4 flex flex-col items-center">
-		<!-- Logo no topo -->
-		<div class="w-full flex justify-center pt-4 pb-6">
-			<Logo class="text-heading" />
-		</div>
 		<!-- Quadrado 1:1 com play no centro -->
 		<div
 			class="relative w-full aspect-square max-w-lg mx-auto rounded-xl bg-surface border border-line overflow-hidden flex items-center justify-center"
@@ -33,7 +32,7 @@
 		>
 			<button
 				type="button"
-				class="w-16 h-16 rounded-full bg-bg/80 text-bg flex items-center justify-center border-2 border-line hover:bg-accent hover:border-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+				class="w-16 h-16 rounded-full bg-surface-2 text-heading flex items-center justify-center border-2 border-line hover:bg-accent hover:text-on-primary hover:border-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
 				aria-label="Reproduzir"
 			>
 				<svg class="w-8 h-8 ml-1" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">

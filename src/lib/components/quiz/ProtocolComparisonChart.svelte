@@ -29,18 +29,18 @@
 			class="relative flex items-end justify-center gap-10 w-full"
 			style="height: {CHART_HEIGHT}px;"
 		>
-			<!-- Planos genéricos: barra cinza com texto bem pequeno numa linha -->
+			<!-- Apps genéricos: barra cinza com texto bem pequeno numa linha -->
 			<div class="flex flex-col items-center gap-0 flex-1 max-w-[100px]">
 				<div
-					class="w-full rounded-t bg-[#272727] flex items-center justify-center min-h-[32px]"
+					class="w-full rounded-t bg-surface-2 flex items-center justify-center min-h-[32px]"
 					style="height: 32px;"
 					aria-hidden="true"
 				>
-					<span class="text-[10px] font-medium text-body/90 px-0.5 text-center leading-tight whitespace-nowrap">Planos genéricos</span>
+					<span class="text-[10px] font-medium text-body/90 px-0.5 text-center leading-tight whitespace-nowrap">Apps genéricos</span>
 				</div>
 			</div>
 
-			<!-- LOTZ: 2.3X acima da barra, barra verde com logo alinhada ao rodapé -->
+			<!-- Zuppy: 2.3X acima da barra, barra verde com logo alinhada ao rodapé -->
 			<div class="flex flex-col items-center gap-0 flex-1 max-w-[100px]">
 				<span
 					class="text-xl font-bold text-heading mb-0.5 block"
@@ -51,7 +51,7 @@
 					style="height: 96px; min-height: 96px;"
 					aria-hidden="true"
 				>
-					<Logo class="w-10 h-auto text-bg shrink-0" />
+					<Logo class="w-10 h-auto text-on-primary shrink-0" />
 				</div>
 			</div>
 		</div>

@@ -28,7 +28,7 @@
 				: [selectedValue]
 	);
 
-	// Exclusive option ids: when selected, disable other options and keep only this one (Nenhuma, Corpo inteiro)
+	// Exclusive option ids: when selected, disable other options and keep only this one (Nenhuma, Corpo inteiro, Come de tudo)
 	const noneOptionIds = $derived(
 		question.id === 'injuries'
 			? ['inj-nenhuma']
@@ -36,7 +36,15 @@
 				? ['diet-nenhuma']
 				: question.id === 'focus_areas'
 					? ['fa-inteiro']
-					: []
+					: question.id === 'health_conditions'
+						? ['hc-nenhuma']
+						: question.id === 'foods_disliked'
+							? ['fd-nenhum']
+							: question.id === 'foods_liked'
+								? ['fl-tudo']
+								: question.id === 'food_restrictions'
+									? ['fr-nenhuma']
+									: []
 	);
 	const hasNoneSelected = $derived(noneOptionIds.length > 0 && noneOptionIds.some((id) => selected.includes(id)));
 
@@ -68,7 +76,7 @@
 	<div class="space-y-2">
 		<h2 class="text-2xl font-extrabold text-heading leading-tight">{displayTitle}</h2>
 		{#if displaySubtext}
-			<p class="text-sm text-body leading-relaxed">{displaySubtext}</p>
+			<p class="text-sm text-body leading-[14px]">{displaySubtext}</p>
 		{/if}
 	</div>
 
@@ -83,17 +91,19 @@
 					? 'grid grid-cols-4 gap-2'
 					: 'flex-col gap-3'}"
 		>
-			{#each (question.options ?? []) as option (option.id)}
-				<OptionButton
-					{option}
-					selected={selected.includes(option.id)}
-					type={isMultiple ? 'multiple' : 'single'}
-					disabled={hasNoneSelected && !noneOptionIds.includes(option.id)}
-					minimal={question.optionsLayout === 'minimal'}
-					horizontal={question.optionsLayout === 'horizontal'}
-					stacked={question.optionsLayout === 'grid'}
-					onclick={handleOptionClick}
-				/>
+			{#each (question.options ?? []) as option, i (option.id)}
+				<div class="option-cascade" style="animation-delay: {80 + i * 55}ms">
+					<OptionButton
+						{option}
+						selected={selected.includes(option.id)}
+						type={isMultiple ? 'multiple' : 'single'}
+						disabled={hasNoneSelected && !noneOptionIds.includes(option.id)}
+						minimal={question.optionsLayout === 'minimal'}
+						horizontal={question.optionsLayout === 'horizontal'}
+						stacked={question.optionsLayout === 'grid'}
+						onclick={handleOptionClick}
+					/>
+				</div>
 			{/each}
 		</div>
 		{#if question.optionsLayout === 'horizontal' && question.type === 'scale'}
@@ -104,3 +114,20 @@
 		{/if}
 	</div>
 </div>
+
+<style>
+	.option-cascade {
+		opacity: 0;
+		animation: option-in 220ms ease forwards;
+	}
+	@keyframes option-in {
+		from {
+			opacity: 0;
+			transform: translateY(10px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+</style>

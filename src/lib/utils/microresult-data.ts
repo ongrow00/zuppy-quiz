@@ -14,7 +14,7 @@ function getOptionLabels(questionId: string, answer: string | string[] | undefin
 }
 
 function top2(questionId: string, answer: string | string[] | undefined, questions: Question[]): string {
-	return getOptionLabels(questionId, answer, questions).slice(0, 2).join(', ') || '—';
+	return getOptionLabels(questionId, answer, questions).slice(0, 2).join(', ') || '...';
 }
 
 /** Retorna a frase do "futuro" (como quer estar) adaptada ao sexo para encaixar em "ficar [futuro]" ou equivalente. */
@@ -23,6 +23,7 @@ function getBodyGoalFraseParaFuturo(
 	isMale: boolean
 ): string {
 	switch (bodyGoalOptionId) {
+		// opções antigas (mantidas para compatibilidade)
 		case 'body-magro':
 			return isMale ? 'magro e definido' : 'magra e definida';
 		case 'body-barriga':
@@ -43,8 +44,12 @@ function getBodyGoalFraseParaFuturo(
 export interface NexoCentralizadaMr1 {
 	variant: 'mr-1';
 	smallLabel: string;
-	headlineHighlight: string;
-	paragraphHighlights: { sexo: string; futuro: string };
+	/** Objetivo para o título/parágrafo (ex.: "emagrecer", "ganhar massa muscular") */
+	objetivo: string;
+	/** Sexo para o parágrafo (ex.: "homens", "mulheres") */
+	sexo: string;
+	/** Fragmento "acelerar a X" (ex.: "queima de gordura", "construção de massa muscular") */
+	acelerar: string;
 }
 
 export interface NexoCentralizadaMr2 {
@@ -60,6 +65,8 @@ export interface NexoCentralizadaMr2 {
 	/** Ex.: "3 por semana" — exibido em verde; omitido se não houver dias selecionados */
 	paragraphTempoPerWeek?: string;
 	showCardioBox: boolean;
+	/** Objetivo (ex.: "emagrecer", "ganhar massa") — usado no parágrafo mr-3 */
+	objetivo?: string;
 }
 
 export interface NexoCentralizadaMr3 {
@@ -85,7 +92,7 @@ export type NexoCentralizada = NexoCentralizadaMr1 | NexoCentralizadaMr2 | NexoC
 /** Farol do fator: verde, laranja ou vermelho */
 export type LifestyleFactorStatus = 'green' | 'orange' | 'red';
 
-/** Fator de estilo de vida para o layout de micro resultado (mr-5): apenas Sono, Movimento, Energia */
+/** Fator de estilo de vida para o layout de micro resultado (mr-5): apenas Sono, Movimento, Motivação */
 export interface LifestyleFactor {
 	category: 'sono' | 'movimento' | 'energia';
 	label: string;
@@ -120,106 +127,12 @@ export function getMicroResultData(
 	questions: Question[]
 ): MicroResultData {
 	const label = (qId: string, key?: string) =>
-		getOptionLabel(qId, answers[key ?? qId] as string, questions) || '—';
+		getOptionLabel(qId, answers[key ?? qId] as string, questions) || '...';
 	const labelsTop2 = (qId: string, key?: string) => top2(qId, answers[key ?? qId], questions);
 
 	switch (stepId) {
 		case 'mr-1': {
-			const goalId = answers['goal_type'] as string | undefined;
-			// Headline: "Primeiro passo para você emagrecer/ganhar massa foi concluído."
-			const headlineHighlight =
-				goalId === 'goal-emagrecer'
-					? 'você emagrecer'
-					: goalId === 'goal-massa'
-						? 'você ganhar massa'
-						: 'seu objetivo';
-			// Parágrafo: "Para homens/mulheres com seu objetivo..."
-			const genderId = answers['gender'] as string | undefined;
-			const sexo =
-				genderId === 'gender-m' ? 'homens' : genderId === 'gender-f' ? 'mulheres' : 'você';
-			// Futuro: frase adaptada ao sexo (magro/magra, definido/definida, etc.)
-			const bodyGoalQuestionId =
-				goalId === 'goal-emagrecer' ? 'body_goal_emagrecer' : 'body_goal_massa';
-			const bodyGoalAnswer = answers[bodyGoalQuestionId] as string | undefined;
-			const isMale = genderId === 'gender-m';
-			const futuro = getBodyGoalFraseParaFuturo(bodyGoalAnswer, isMale);
-			return {
-				title: '',
-				bullets: [],
-				ctaText: 'Perfeito, continuar →',
-				nexo: {
-					variant: 'mr-1',
-					smallLabel: 'Seus Objetivos',
-					headlineHighlight,
-					paragraphHighlights: {
-						sexo,
-						futuro
-					}
-				}
-			};
-		}
-		case 'mr-2': {
-			const genderId = answers['gender'] as string | undefined;
-			const headlineSubject =
-				genderId === 'gender-m' ? 'Homens' : genderId === 'gender-f' ? 'Mulheres' : 'Pessoas';
-			const locationId = answers['workout_location'] as string | undefined;
-			const durationId = answers['workout_duration_pref'] as string | undefined;
-			const tempo =
-				durationId === 'dur-30'
-					? '30 minutos'
-					: durationId === 'dur-45'
-						? '45 minutos'
-						: durationId === 'dur-60'
-							? '1 hora'
-							: durationId === 'dur-60plus'
-								? '1 hora ou mais'
-								: 'seu tempo';
-			const workoutDays = answers['workout_days'];
-			const daysCount = Array.isArray(workoutDays) ? workoutDays.length : 0;
-			const paragraphTempoPerWeek = daysCount > 0 ? `${daysCount}x por semana` : undefined;
-			const showCardioBox = answers['cardio_enabled'] === 'cardio-sim';
-			// Fragmentos gramaticais para cada opção de local (headline e parágrafo). Qualquer tipo de academia = só "academia".
-			const { headlineFragment, paragraphFragment } = (() => {
-				switch (locationId) {
-					case 'loc-casa':
-						return {
-							headlineFragment: 'em casa',
-							paragraphFragment: 'você treinar em casa'
-						};
-					case 'loc-academia':
-					case 'loc-condominio':
-						return {
-							headlineFragment: 'na academia',
-							paragraphFragment: 'você treinar na academia'
-						};
-					case 'loc-varia':
-						return {
-							headlineFragment: 'em vários lugares',
-							paragraphFragment: 'você treinar onde for melhor'
-						};
-					default:
-						return {
-							headlineFragment: 'no seu local',
-							paragraphFragment: 'seu contexto'
-						};
-				}
-			})();
-			return {
-				title: '',
-				bullets: [],
-				ctaText: 'Continuar →',
-				nexo: {
-					variant: 'mr-2',
-					headlineSubject,
-					headlineLocalFragment: headlineFragment,
-					paragraphLocalFragment: paragraphFragment,
-					paragraphTempo: tempo,
-					paragraphTempoPerWeek,
-					showCardioBox
-				}
-			};
-		}
-		case 'mr-3': {
+			// mr-1: gráfico de quantos kg a pessoa vai perder/ganhar (plano de calorias + WeightLossLineChart)
 			const genderId = answers['gender'] as string | undefined;
 			const sexo =
 				genderId === 'gender-m' ? 'homens' : genderId === 'gender-f' ? 'mulheres' : 'pessoas';
@@ -229,20 +142,20 @@ export function getMicroResultData(
 					? (typeof rawAge === 'string' ? parseInt(rawAge, 10) : Array.isArray(rawAge) ? parseInt(String(rawAge[0]), 10) : Number(rawAge))
 					: null;
 			const idadeValida = typeof idade === 'number' && Number.isFinite(idade) ? idade : null;
-
 			const current = answers['weight_current_kg'];
 			const goal = answers['weight_goal_kg'];
 			const currentNum = typeof current === 'string' ? parseFloat(current) : NaN;
 			const goalNum = typeof goal === 'string' ? parseFloat(goal) : NaN;
 			const kgToReach = !isNaN(currentNum) && !isNaN(goalNum) ? Math.abs(goalNum - currentNum) : 0;
-			const weeksEstimate = kgToReach > 0 ? Math.ceil(kgToReach * 2) : 12;
 			const isWeightLoss = !isNaN(currentNum) && !isNaN(goalNum) && goalNum < currentNum;
+			const weeksEstimate =
+				kgToReach > 0 ? Math.ceil(kgToReach * (isWeightLoss ? 1.2 : 1.5)) : 12;
 			return {
 				title: '',
 				bullets: [],
-				ctaText: 'Quero chegar lá →',
+				ctaText: 'Perfeito, continuar →',
 				nexo: {
-					variant: 'mr-3',
+					variant: 'mr-1',
 					currentKg: isNaN(currentNum) ? 0 : currentNum,
 					goalKg: isNaN(goalNum) ? 0 : goalNum,
 					kgToReach,
@@ -250,7 +163,67 @@ export function getMicroResultData(
 					isWeightLoss,
 					sexo,
 					idade: idadeValida
-				}
+				} as NexoCentralizada
+			};
+		}
+		case 'mr-2': {
+			// mr-2: plano de calorias para objetivo + BodyRadarChart
+			const goalId = answers['goal_type'] as string | undefined;
+			const objetivo =
+				goalId === 'goal-emagrecer'
+					? 'emagrecer'
+					: goalId === 'goal-massa'
+						? 'ganhar massa muscular'
+						: 'seu objetivo';
+			const acelerar =
+				goalId === 'goal-emagrecer'
+					? 'queima de gordura'
+					: goalId === 'goal-massa'
+						? 'construção de massa muscular'
+						: 'seus resultados';
+			const genderId = answers['gender'] as string | undefined;
+			const sexo =
+				genderId === 'gender-m' ? 'homens' : genderId === 'gender-f' ? 'mulheres' : 'você';
+			return {
+				title: '',
+				bullets: [],
+				ctaText: 'Continuar →',
+				nexo: {
+					variant: 'mr-2',
+					smallLabel: 'Seus Objetivos',
+					objetivo,
+					sexo,
+					acelerar
+				} as NexoCentralizada
+			};
+		}
+		case 'mr-3': {
+			// mr-3 mostra "2.3x mais rápido" + ProtocolComparisonChart (mesmo conteúdo que mr-2 antes da troca).
+			const goalId = answers['goal_type'] as string | undefined;
+			const objetivo =
+				goalId === 'goal-emagrecer'
+					? 'emagrecer'
+					: goalId === 'goal-massa'
+						? 'ganhar massa muscular'
+						: 'seu objetivo';
+			const genderId = answers['gender'] as string | undefined;
+			const headlineSubject =
+				genderId === 'gender-m' ? 'Homens' : genderId === 'gender-f' ? 'Mulheres' : 'Pessoas';
+			const nexo2Style = {
+				variant: 'mr-3' as const,
+				headlineSubject,
+				headlineLocalFragment: 'no seu dia a dia',
+				paragraphLocalFragment: 'você transformar seu corpo',
+				paragraphTempo: 'seu tempo',
+				paragraphTempoPerWeek: undefined as string | undefined,
+				showCardioBox: false,
+				objetivo
+			};
+			return {
+				title: '',
+				bullets: [],
+				ctaText: 'Quero chegar lá →',
+				nexo: nexo2Style as NexoCentralizada
 			};
 		}
 		case 'mr-5': {
@@ -262,53 +235,56 @@ export function getMicroResultData(
 						? 'ganho de massa'
 						: 'objetivo';
 
-			// Farol classificado pelas respostas do quiz (ids = question.id em questions.ts)
 			const answer = (qId: string) => (answers[qId] as string | undefined) ?? undefined;
 
-			// Sono: faixa de horas → valor + farol (vermelho <5h, laranja 5–6h, verde 7–8h e 9h+)
-			const sleepId = answer('sleep_hours_range');
+			// Sono: qualidade do sono → valor + farol
+			const sleepId = answer('sleep_quality');
 			const { value: sonoValue, status: sonoStatus } = (() => {
 				switch (sleepId) {
-					case 'sleep-menos5':
-						return { value: '4 horas', status: 'red' as const };
-					case 'sleep-5-6':
-						return { value: '6 horas', status: 'orange' as const };
-					case 'sleep-7-8':
-						return { value: '7 horas', status: 'green' as const };
-					case 'sleep-mais8':
-						return { value: '9 horas', status: 'green' as const };
+					case 'sq-bem':
+						return { value: 'Bem descansado(a)', status: 'green' as const };
+					case 'sq-cansado':
+						return { value: 'Acordo cansado(a)', status: 'orange' as const };
+					case 'sq-dificuldade':
+						return { value: 'Dificuldade', status: 'orange' as const };
+					case 'sq-pouco':
+						return { value: '< 6 horas', status: 'red' as const };
 					default:
-						return { value: '—', status: 'orange' as const };
+						return { value: '...', status: 'orange' as const };
 				}
 			})();
 
-			// Movimento: classificado pela resposta a daily_walk_range
-			const walkId = answer('daily_walk_range');
+			// Movimento: nível de atividade física
+			const activityId = answer('activity_level');
 			const { value: movimentoValue, status: movimentoStatus } = (() => {
-				switch (walkId) {
-					case 'walk-sentado':
+				switch (activityId) {
+					case 'al-sedentario':
 						return { value: 'Baixo', status: 'red' as const };
-					case 'walk-moderado':
+					case 'al-leve':
+						return { value: 'Leve', status: 'orange' as const };
+					case 'al-moderado':
 						return { value: 'Médio', status: 'orange' as const };
-					case 'walk-ativo':
+					case 'al-ativo':
 						return { value: 'Alto', status: 'green' as const };
 					default:
-						return { value: '—', status: 'orange' as const };
+						return { value: '...', status: 'orange' as const };
 				}
 			})();
 
-			// Energia: classificado pela resposta a energy_level
-			const energyId = answer('energy_level');
-			const { value: energiaValue, status: energiaStatus } = (() => {
-				switch (energyId) {
-					case 'energy-cansado':
-						return { value: 'Baixo', status: 'red' as const };
-					case 'energy-media':
-						return { value: 'Médio', status: 'orange' as const };
-					case 'energy-disposto':
-						return { value: 'Alto', status: 'green' as const };
+			// Motivação: prontidão do usuário
+			const readinessId = answer('readiness');
+			const { value: motivacaoValue, status: motivacaoStatus } = (() => {
+				switch (readinessId) {
+					case 'rd-pronto':
+						return { value: 'Total', status: 'green' as const };
+					case 'rd-motivado':
+						return { value: 'Alta', status: 'green' as const };
+					case 'rd-inseguro':
+						return { value: 'Média', status: 'orange' as const };
+					case 'rd-avaliando':
+						return { value: 'Baixa', status: 'red' as const };
 					default:
-						return { value: '—', status: 'orange' as const };
+						return { value: '...', status: 'orange' as const };
 				}
 			})();
 
@@ -329,12 +305,60 @@ export function getMicroResultData(
 						},
 						{
 							category: 'energia',
-							label: 'Energia',
-							value: energiaValue,
-							status: energiaStatus
+							label: 'Motivação',
+							value: motivacaoValue,
+							status: motivacaoStatus
 						}
 					],
 					bottomText: `Com base no seu objetivo de **${goalType}** e nos padrões que identificamos no seu estilo de vida, seu protocolo será ajustado **milimetricamente** para funcionar dentro da sua realidade, não contra ela.`
+				}
+			};
+		}
+		case 'mr-4': {
+			const goalId = answers['goal_type'] as string | undefined;
+			const goalType =
+				goalId === 'goal-emagrecer'
+					? 'emagrecimento'
+					: goalId === 'goal-massa'
+						? 'ganho de massa'
+						: 'objetivo';
+
+			const mealCountId = answers['meal_count'] as string | undefined;
+			const mealCountLabel =
+				mealCountId === 'mc-2' ? '2 refeições' :
+				mealCountId === 'mc-3' ? '3 refeições' :
+				mealCountId === 'mc-4' ? '4 refeições' :
+				mealCountId === 'mc-5' ? '5 refeições' :
+				mealCountId === 'mc-6' ? '6 refeições' :
+				mealCountId === 'mc-7' ? '7 refeições' :
+				mealCountId === 'mc-8' ? '8 refeições' : '...';
+
+			const prepTimeId = answers['meal_prep_time'] as string | undefined;
+			const prepTimeLabel =
+				prepTimeId === 'mpt-15' ? '< 15 min' :
+				prepTimeId === 'mpt-15a30' ? '15–30 min' :
+				prepTimeId === 'mpt-30a60' ? '30–60 min' :
+				prepTimeId === 'mpt-bastante' ? 'Bastante tempo' : '...';
+
+			const planStyleId = answers['plan_style'] as string | undefined;
+			const planStyleLabel =
+				planStyleId === 'ps-simples' ? 'Simples e prático' :
+				planStyleId === 'ps-variado' ? 'Com variedade' :
+				planStyleId === 'ps-tanto-faz' ? 'Flexível' : '...';
+
+			return {
+				title: '',
+				bullets: [],
+				ctaText: 'Ver meu plano →',
+				lifestyleFactors: {
+					goalType,
+					subtitle: 'Seu cardápio será montado do seu jeito, com o que você gosta e dentro da sua rotina.',
+					factors: [
+						{ category: 'sono', label: 'Refeições por dia', value: mealCountLabel, status: 'green' as const },
+						{ category: 'movimento', label: 'Tempo de preparo', value: prepTimeLabel, status: 'green' as const },
+						{ category: 'energia', label: 'Estilo do plano', value: planStyleLabel, status: 'green' as const }
+					],
+					bottomText: `Com base nas suas preferências alimentares e objetivo de **${goalType}**, seu cardápio será ajustado **milimetricamente** para funcionar dentro da sua rotina.`
 				}
 			};
 		}

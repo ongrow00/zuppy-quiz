@@ -5,7 +5,7 @@ import type { PageLoad } from './$types';
 export const load: PageLoad = () => {
 	if (browser) {
 		try {
-			const raw = sessionStorage.getItem('lotz-quiz-state');
+			const raw = sessionStorage.getItem('zuppy-quiz-state');
 			if (!raw) redirect(302, '/');
 			const state = JSON.parse(raw);
 			const hasAnswers = state.answers && Object.keys(state.answers).length > 0;

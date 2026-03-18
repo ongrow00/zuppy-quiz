@@ -19,7 +19,7 @@
 	<div class="space-y-2">
 		<h2 class="text-2xl font-extrabold text-heading leading-tight">{question.text}</h2>
 		{#if question.subtext}
-			<p class="text-sm text-body leading-relaxed">{question.subtext}</p>
+			<p class="text-sm text-body leading-[14px]">{question.subtext}</p>
 		{/if}
 	</div>
 	<div class="flex items-center gap-2">

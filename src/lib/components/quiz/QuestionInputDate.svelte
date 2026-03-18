@@ -27,7 +27,18 @@
 	let inputValue = $state(value ?? '');
 	let errorMsg = $state('');
 
-	function handleInput(raw: string) {
+	// Sincroniza com o valor vindo do parent (ex.: restaura ao voltar na pergunta)
+	$effect(() => {
+		const v = value ?? '';
+		if (v !== inputValue) inputValue = v;
+	});
+
+	function handleClick(e: MouseEvent) {
+		const input = e.currentTarget as HTMLInputElement;
+		try { (input as any).showPicker?.(); } catch {}
+	}
+
+	function applyValue(raw: string) {
 		inputValue = raw;
 		if (!raw) {
 			errorMsg = '';
@@ -39,7 +50,6 @@
 				raw === today
 					? 'A data precisa ser após hoje, não no mesmo dia.'
 					: 'Escolha uma data no futuro.';
-			// Invalida a resposta para bloquear o botão "Próxima"
 			onSelect(question.id, '');
 		} else {
 			errorMsg = '';
@@ -52,7 +62,7 @@
 	<div class="space-y-2">
 		<h2 class="text-2xl font-extrabold text-heading leading-tight">{displayTitle}</h2>
 		{#if question.subtext}
-			<p class="text-sm text-body leading-relaxed">{question.subtext}</p>
+			<p class="text-sm text-body leading-[14px]">{question.subtext}</p>
 		{/if}
 	</div>
 	<!-- Wrapper evita overflow no iOS (barra/ícone nativo estourando) -->
@@ -61,7 +71,9 @@
 			type="date"
 			min={minDate}
 			value={inputValue}
-			oninput={(e) => handleInput(e.currentTarget.value)}
+			onclick={handleClick}
+			oninput={(e) => applyValue(e.currentTarget.value)}
+			onchange={(e) => applyValue(e.currentTarget.value)}
 			placeholder="Escolha a data"
 			class="date-input-white-icon w-full min-w-0 max-w-full px-4 py-4 pr-12 rounded-2xl border-2 bg-surface text-body focus:outline-none focus:ring-2 transition-colors
 				{!inputValue ? 'is-empty' : ''}

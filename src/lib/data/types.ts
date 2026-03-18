@@ -12,7 +12,8 @@ export type QuestionType =
 	| 'text'
 	| 'slider'
 	| 'ruler'
-	| 'body_fat_grid';
+	| 'body_fat_grid'
+	| 'feature_info';
 
 export interface QuizOption {
 	id: string;

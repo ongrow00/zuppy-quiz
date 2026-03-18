@@ -9,14 +9,13 @@
 
 	let { selected }: Props = $props();
 
+	// Eixos alinhados às opções da pergunta focus_areas (Corpo todo = isAll, não tem eixo)
 	const PARTS = [
-		{ id: 'fa-ombros', label: 'Ombros' },
+		{ id: 'fa-barriga', label: 'Barriga' },
+		{ id: 'fa-pernas', label: 'Pernas e coxas' },
+		{ id: 'fa-bracos', label: 'Braços' },
 		{ id: 'fa-peito', label: 'Peito' },
-		{ id: 'fa-biceps', label: 'Bíceps' },
-		{ id: 'fa-abdomen', label: 'Abdômen' },
-		{ id: 'fa-gluteos', label: 'Glúteos' },
-		{ id: 'fa-pernas', label: 'Pernas' },
-		{ id: 'fa-costas', label: 'Costas' }
+		{ id: 'fa-gluteos', label: 'Glúteos' }
 	];
 
 	const N = PARTS.length;
@@ -86,32 +85,39 @@
 		if (y > 0.3) return 'hanging';
 		return 'middle';
 	}
+
+	/** Quebra rótulo em até 2 linhas no último espaço para caber no gráfico */
+	function labelLines(label: string): [string] | [string, string] {
+		const idx = label.lastIndexOf(' ');
+		if (idx <= 0) return [label];
+		return [label.slice(0, idx), label.slice(idx + 1)];
+	}
 </script>
 
 <div class="flex flex-col items-center gap-2 w-full">
 	<svg viewBox="0 0 340 325" class="w-full max-w-[300px]" aria-hidden="true">
-		<!-- Axis lines -->
+		<!-- Axis lines (cinza claro) -->
 		{#each PARTS as _, i}
 			{@const op = pt(i, 1)}
-			<line x1={CX} y1={CY} x2={op.x} y2={op.y} stroke="#272727" stroke-width="1" />
+			<line x1={CX} y1={CY} x2={op.x} y2={op.y} stroke="#d1d1d6" stroke-width="1" />
 		{/each}
 
-		<!-- Grid rings -->
-		<polygon points={mid2Pts} fill="none" stroke="#1E1E1E" stroke-width="1" />
-		<polygon points={mid1Pts} fill="none" stroke="#272727" stroke-width="1" />
-		<polygon points={outerPts} fill="none" stroke="#333333" stroke-width="1.5" />
+		<!-- Grid rings (cinza claro) -->
+		<polygon points={mid2Pts} fill="none" stroke="#e5e5ea" stroke-width="1" />
+		<polygon points={mid1Pts} fill="none" stroke="#d1d1d6" stroke-width="1" />
+		<polygon points={outerPts} fill="none" stroke="#b0b0b5" stroke-width="1.5" />
 
-		<!-- Animated data area -->
+		<!-- Animated data area (verde) -->
 		<polygon
 			points={dataPts}
-			fill="#9DBB54"
+			fill="var(--color-nutrition-green)"
 			fill-opacity="0.18"
-			stroke="#9DBB54"
+			stroke="var(--color-nutrition-green)"
 			stroke-width="2"
 			stroke-linejoin="round"
 		/>
 
-		<!-- Dots at active axes -->
+		<!-- Dots: verde quando ativo, cinza claro quando inativo -->
 		{#each PARTS as part, i}
 			{@const active = isAll || selected.includes(part.id)}
 			{@const p = pt(i, 1)}
@@ -119,28 +125,31 @@
 				cx={p.x}
 				cy={p.y}
 				r={active ? 5 : 3}
-				fill={active ? '#9DBB54' : '#272727'}
-				stroke={active ? '#9DBB54' : '#333333'}
+				fill={active ? 'var(--color-nutrition-green)' : '#b0b0b5'}
+				stroke={active ? 'var(--color-nutrition-green)' : '#d1d1d6'}
 				stroke-width="1"
 			/>
 		{/each}
 
-		<!-- Labels -->
+		<!-- Labels: verde quando ativo, cinza claro quando inativo -->
 		{#each PARTS as part, i}
 			{@const lp = labelPt(i)}
 			{@const active = isAll || selected.includes(part.id)}
+			{@const lines = labelLines(part.label)}
 			<text
 				x={lp.x}
-				y={lp.y}
+				y={lines.length === 2 ? lp.y - 6 : lp.y}
 				text-anchor={textAnchor(i)}
-				dominant-baseline={dominantBaseline(i)}
+				dominant-baseline={lines.length === 2 ? 'auto' : dominantBaseline(i)}
 				font-size="12"
 				font-family="inherit"
-				fill={active ? '#9DBB54' : '#555555'}
+				fill={active ? 'var(--color-nutrition-green)' : '#8e8e93'}
 				font-weight={active ? '700' : '400'}
-			>{part.label}</text>
+			>
+				{#each lines as line, li}
+					<tspan x={lp.x} dy={li === 0 ? 0 : 14}>{line}</tspan>
+				{/each}
+			</text>
 		{/each}
 	</svg>
-
-	<p class="text-xs text-muted tracking-wide">Grupos musculares de foco</p>
 </div>

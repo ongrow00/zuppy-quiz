@@ -38,7 +38,7 @@
 	<div class="space-y-2">
 		<h2 class="text-2xl font-extrabold text-heading leading-tight">{displayTitle}</h2>
 		{#if question.subtext}
-			<p class="text-sm text-body leading-relaxed">{question.subtext}</p>
+			<p class="text-sm text-body leading-[14px]">{question.subtext}</p>
 		{/if}
 	</div>
 	<input

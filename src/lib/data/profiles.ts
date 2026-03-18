@@ -6,7 +6,7 @@ export const profiles: ResultProfile[] = [
 		name: 'O Empreendedor',
 		tagline: 'Você nasceu para construir o seu próprio caminho',
 		description:
-			'Você é movido pela liberdade, pela autonomia e pela capacidade de criar algo do zero. Não se encaixa em caixas — você prefere definir as próprias regras. Seu perfil indica alto potencial para empreendedorismo ou liderança com total autonomia.',
+			'Você é movido pela liberdade, pela autonomia e pela capacidade de criar algo do zero. Não se encaixa em caixas. Você prefere definir as próprias regras. Seu perfil indica alto potencial para empreendedorismo ou liderança com total autonomia.',
 		imageUrl: '/images/profiles/empreendedor.webp',
 		cta: {
 			text: 'Descubra como acelerar sua jornada empreendedora',

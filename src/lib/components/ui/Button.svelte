@@ -25,11 +25,11 @@
 	}: Props = $props();
 
 	const base =
-		'inline-flex items-center justify-center font-semibold rounded-2xl transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-bg disabled:opacity-40 disabled:pointer-events-none active:scale-95';
+		'inline-flex items-center justify-center font-semibold rounded-2xl transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:opacity-40 disabled:pointer-events-none active:scale-95';
 
 	const variants: Record<Variant, string> = {
 		primary:
-			'bg-accent text-bg hover:bg-accent-dark focus-visible:ring-accent',
+			'bg-accent text-on-primary hover:bg-accent-dark focus-visible:ring-accent',
 		secondary:
 			'bg-surface-2 text-heading border border-line hover:bg-line focus-visible:ring-line',
 		ghost:

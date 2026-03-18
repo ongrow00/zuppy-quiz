@@ -152,15 +152,4 @@
 		<div class="w-2 h-2 rounded-full bg-accent flex-shrink-0"></div>
 		<div class="w-[1.5px] bg-accent flex-shrink-0" style="height: {LABEL_H - 4}px"></div>
 	</div>
-
-	<!-- Left fade -->
-	<div
-		class="pointer-events-none absolute top-0 bottom-0 left-0 z-20"
-		style="width: {containerWidth / 4}px; background: linear-gradient(to right, #0E0E0E 0%, transparent 100%)"
-	></div>
-	<!-- Right fade -->
-	<div
-		class="pointer-events-none absolute top-0 bottom-0 right-0 z-20"
-		style="width: {containerWidth / 4}px; background: linear-gradient(to left, #0E0E0E 0%, transparent 100%)"
-	></div>
 </div>
