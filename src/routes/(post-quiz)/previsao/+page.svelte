@@ -90,6 +90,7 @@
 
 		displayDate = `${startDate.getDate()} de ${MESES[startDate.getMonth()]}`;
 		timeoutId = setTimeout(step, 250);
+
 		return () => {
 			if (timeoutId != null) clearTimeout(timeoutId);
 		};

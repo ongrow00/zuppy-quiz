@@ -166,3 +166,17 @@ p.text-base {
 	font-size: 14px;
 	line-height: 14px;
 }
+
+/* Animação Fitness (Lottie) na home – arquivo original, sem edição de cores */
+.fitness-lottie-wrapper svg {
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+}
+/* Remove fundo branco do Lottie */
+.fitness-lottie-wrapper rect[fill="#ffffff"],
+.fitness-lottie-wrapper rect[fill="#fff"],
+.fitness-lottie-wrapper rect[fill="white"],
+.fitness-lottie-wrapper rect[width="750"][height="750"] {
+	fill: transparent !important;
+}
