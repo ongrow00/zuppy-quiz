@@ -81,20 +81,22 @@
 		class="flex-1 flex flex-col items-center px-4 pt-[50px] pb-40 min-h-0 overflow-y-auto"
 	>
 		<div class="flex-1 flex flex-col justify-center w-full max-w-lg">
-			<div class="text-center space-y-6">
+			<div class="text-center flex flex-col items-center gap-1">
 				<div
 					bind:this={heroLottieEl}
-					class="fitness-lottie-wrapper w-full max-w-md mx-auto aspect-[2/1] flex items-center justify-center -my-1 p-[20px]"
+					class="fitness-lottie-wrapper w-full max-w-[min(100%,9.8rem)] mx-auto aspect-[708/480] flex items-center justify-center min-h-0 overflow-hidden p-0"
 					aria-hidden="true"
 				></div>
-				<h1 class="text-2xl md:text-3xl font-normal text-heading leading-[21px] relative z-10">
-					Receba um <strong class="font-bold text-accent">plano de calorias</strong> criado <strong class="font-bold text-accent">milimetricamente</strong> para <strong class="font-bold text-accent">seu corpo</strong> nos <strong class="font-bold text-accent">próximos minutos</strong>.
-				</h1>
-				<p class="text-sm text-body/80 leading-[14px]">
-					Responda algumas perguntas e descubra exatamente <strong class="font-bold text-accent">quanto e o que comer por dia</strong> para transformar seu corpo de <strong class="font-bold text-accent">acordo com seu biotipo</strong> sem abrir mão do que você gosta.
-				</p>
-				<div class="flex justify-center">
-					<SocialProof />
+				<div class="flex flex-col items-center gap-6 w-full">
+					<h1 class="text-2xl md:text-3xl font-normal text-heading leading-[21px] relative z-10">
+						Receba um <strong class="font-bold text-accent">plano de calorias</strong> criado <strong class="font-bold text-accent">milimetricamente</strong> para <strong class="font-bold text-accent">seu corpo</strong> nos <strong class="font-bold text-accent">próximos minutos</strong>.
+					</h1>
+					<p class="text-sm text-body/80 leading-[14px]">
+						Responda algumas perguntas e descubra exatamente <strong class="font-bold text-accent">quanto e o que comer por dia</strong> para transformar seu corpo de <strong class="font-bold text-accent">acordo com seu biotipo</strong> sem abrir mão do que você gosta.
+					</p>
+					<div class="flex justify-center">
+						<SocialProof />
+					</div>
 				</div>
 			</div>
 		</div>
