@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { postQuizStore } from '$lib/stores/post-quiz.store';
+	import { quizStore } from '$lib/stores/quiz.store';
 
 	const COUNTRIES = [
 		{ dial: '55',  flag: '🇧🇷', name: 'Brasil' },
@@ -207,6 +208,15 @@
 		name.trim() ? `${name.trim()}, qual é o seu WhatsApp?` : 'Qual é o seu WhatsApp?'
 	);
 
+	const objetivoLabel = $derived.by(() => {
+		const goalId = $quizStore.answers['goal_type'] as string | undefined;
+		return goalId === 'goal-emagrecer'
+			? 'emagrecer'
+			: goalId === 'goal-massa'
+				? 'ganhar massa'
+				: 'seu objetivo';
+	});
+
 	// Country selector state
 	let selectedDial = $state('55');
 	let dropdownOpen = $state(false);
@@ -297,7 +307,7 @@
 	<div class="space-y-2">
 		<h1 class="text-2xl font-extrabold text-heading leading-tight">{whatsappTitle}</h1>
 		<p class="text-sm text-body leading-[14px]">
-			Usaremos seu WhatsApp para enviar seu protocolo milimetricamente personalizado.
+			Digite seu WhatsApp para conectar nossa inteligência artificial ao seu número e receber seu plano de calorias personalizado para {objetivoLabel}.
 		</p>
 	</div>
 

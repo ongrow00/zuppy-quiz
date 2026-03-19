@@ -15,6 +15,6 @@
 	<meta name="description" content="Zuppy — seu plano personalizado." />
 </svelte:head>
 
-<div class="min-h-screen flex flex-col">
+<div class="h-full min-h-0 flex flex-col">
 	{@render children()}
 </div>

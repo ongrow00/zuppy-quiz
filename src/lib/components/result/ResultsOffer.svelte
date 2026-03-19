@@ -31,7 +31,7 @@
 	} = $props();
 </script>
 
-<div class="offer {className}">
+<div id="offer-section" class="offer {className}">
 	<!-- CTA header -->
 	<div class="mt-8 text-center">
 		<h2 class="text-2xl font-extrabold text-heading leading-none mb-3">

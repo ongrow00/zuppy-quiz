@@ -7,7 +7,7 @@
 	import NutritionPlanCard from '$lib/components/quiz/NutritionPlanCard.svelte';
 	import AvatarStack from '$lib/components/ui/AvatarStack.svelte';
 	import ResultsOffer from '$lib/components/result/ResultsOffer.svelte';
-	import { calculateCalorieProfile, estimateBodyFatPercent, bodyFatPercentFromStage } from '$lib/utils/calories';
+	import { calculateCalorieProfile, bodyFatPercentFromStage } from '$lib/utils/calories';
 	import { BODY_FAT_LABELS } from '$lib/assets/body-fat-config';
 	import { getRemaining, formatCountdown, TOTAL_SECONDS } from '$lib/stores/discount-countdown.store';
 
@@ -127,7 +127,8 @@
 	});
 
 	const calorieProfile = $derived(calculateCalorieProfile(quiz.answers));
-	const currentBfPercent = $derived(estimateBodyFatPercent(quiz.answers));
+	/** Gordura corporal atual exibida: baseada no estágio escolhido pelo usuário, para ficar próxima da expectativa (não Deurenberg). */
+	const currentBfPercent = $derived(bodyFatPercentFromStage(bodyCurrentStage, gender));
 	const goalBfPercent = $derived(bodyFatPercentFromStage(bodyGoalStage, gender));
 
 	const steps = $derived([
@@ -243,6 +244,11 @@
 		const cardW = testimonialSliderEl.scrollWidth / testimonials.length;
 		testimonialSliderEl.scrollTo({ left: i * cardW, behavior: 'smooth' });
 	}
+
+	function scrollToOffer() {
+		if (typeof document === 'undefined') return;
+		document.getElementById('offer-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+	}
 </script>
 
 <svelte:head>
@@ -286,6 +292,7 @@
 		carboidratoG={calorieProfile.carboidratoG}
 		gorduraG={calorieProfile.gorduraG}
 		fibraG={calorieProfile.fibraG}
+		scrollToOffer={scrollToOffer}
 	/>
 
 	<!-- Social proof -->
@@ -360,7 +367,7 @@
 				</div>
 				<div>
 					<p class="text-sm font-bold text-heading mb-1 flex items-center gap-0.5 flex-wrap">
-						Cardápio diário para {actionVerb}
+						<span class="whitespace-nowrap">Cardápio diário para {actionVerb}</span>
 						<span class="inline-flex items-center justify-center w-5 h-5 rounded bg-violet-100 text-violet-600 shrink-0" title="Presente" aria-hidden="true">
 							<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"></polyline><rect x="2" y="7" width="20" height="5"></rect><line x1="12" y1="22" x2="12" y2="7"></line><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path></svg>
 						</span>
@@ -388,7 +395,7 @@
 				</div>
 				<div>
 					<p class="text-sm font-bold text-heading mb-1 flex items-center gap-0.5 flex-wrap">
-						Análise corporal por foto
+						<span class="whitespace-nowrap">Análise corporal por foto</span>
 						<span class="inline-flex items-center justify-center w-5 h-5 rounded bg-violet-100 text-violet-600 shrink-0" title="Presente" aria-hidden="true">
 							<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"></polyline><rect x="2" y="7" width="20" height="5"></rect><line x1="12" y1="22" x2="12" y2="7"></line><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path></svg>
 						</span>
@@ -609,7 +616,7 @@
 				Simples, direto e tudo no WhatsApp. Sem baixar nada, já funciona no app que você usa todo dia.
 			</p>
 
-			<div class="relative -mx-4">
+			<div class="relative -mx-4 app-carousel-fixed">
 				<!-- Fade esquerda -->
 				<div class="absolute left-0 top-0 bottom-0 w-[14%] z-10 pointer-events-none" style="background: linear-gradient(to right, color-mix(in srgb, var(--color-bg) 60%, transparent), transparent);"></div>
 				<!-- Fade direita -->
@@ -618,8 +625,8 @@
 				<div
 					bind:this={appSliderEl}
 					onscroll={onAppSliderScroll}
-					class="flex overflow-x-auto gap-3 no-testimonial-scrollbar"
-					style="scroll-snap-type: x mandatory; padding-inline: 14%;"
+					class="flex overflow-x-auto gap-3 no-testimonial-scrollbar app-carousel-inner"
+					style="scroll-snap-type: x mandatory; padding-inline: 14%; box-sizing: border-box; touch-action: pan-x;"
 				>
 					{#each appScreens as screen, i}
 						<div
@@ -753,6 +760,19 @@
 
 	.no-testimonial-scrollbar::-webkit-scrollbar { display: none; }
 	.no-testimonial-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+	/* Carrossel "Veja o Zuppy por dentro" — dimensões fixas para evitar zoom/reflow */
+	.app-carousel-fixed {
+		width: min(341px, 100%);
+		height: 332px;
+		margin-inline: auto;
+		overflow: hidden;
+	}
+	.app-carousel-inner {
+		width: 100%;
+		height: 100%;
+		min-height: 0;
+	}
 
 	@keyframes step-pulse {
 		0%, 100% { box-shadow: 0 0 0 0 rgba(142, 211, 58, 0.5); }

@@ -4,14 +4,28 @@
 	let { visible = false, discountCode = '#PHIL545' }: { visible?: boolean; discountCode?: string } = $props();
 
 	const remainingStore = getRemaining();
+
+	function scrollToOffer() {
+		document.getElementById('offer-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+	}
+
+	function onKeydown(e: KeyboardEvent) {
+		if (e.key === 'Enter' || e.key === ' ') {
+			e.preventDefault();
+			scrollToOffer();
+		}
+	}
 </script>
 
 {#if visible}
-	<div class="sticky-discount-banner fixed inset-x-0 top-0 z-50 px-4 pt-0">
+	<div class="sticky-discount-banner fixed inset-x-0 top-0 z-50 px-4 pt-[env(safe-area-inset-top)]">
 		<div
-			class="mx-auto flex w-full max-w-lg items-center justify-between gap-4 rounded-b-[15px] bg-[#1a1a1a] px-4 py-3 text-white"
-			role="banner"
-			aria-label="Desconto aplicado"
+			class="mx-auto flex w-full max-w-lg items-center justify-between gap-4 rounded-b-[15px] bg-[#1a1a1a] px-4 py-3 text-white cursor-pointer select-none"
+			role="button"
+			tabindex="0"
+			aria-label="Desconto aplicado. Clique para ir à oferta."
+			onclick={scrollToOffer}
+			onkeydown={onKeydown}
 		>
 			<div class="flex flex-col gap-0.5">
 				<span class="text-[11px] font-medium text-[#9e9e9e]">Desconto aplicado</span>

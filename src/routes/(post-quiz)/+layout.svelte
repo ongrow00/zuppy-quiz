@@ -78,6 +78,10 @@
 		if (!browser) return;
 		const onResults = pathname === '/results' || pathname.startsWith('/results/');
 		document.body.classList.toggle('results-page-scroll-lock', onResults);
+		if (onResults) {
+			document.documentElement.scrollTop = 0;
+			document.body.scrollTop = 0;
+		}
 		return () => document.body.classList.remove('results-page-scroll-lock');
 	});
 
@@ -93,7 +97,7 @@
 	<StickyDiscountBanner visible={showStickyBanner} discountCode={discountCode} />
 {/if}
 <div
-	class="{isResultsPage ? 'post-quiz-results-scroll h-dvh flex flex-col overflow-y-auto overflow-x-hidden' : 'h-screen min-h-0 flex flex-col overflow-hidden'}"
+	class="{isResultsPage ? 'post-quiz-results-scroll h-full min-h-0 flex flex-col overflow-y-auto overflow-x-hidden' : 'h-full min-h-0 flex flex-col overflow-hidden'}"
 	bind:this={scrollContainer}
 	onscroll={onScroll}
 >
@@ -157,7 +161,7 @@
 				<div
 					in:fly={{ x: 30, duration: 260, delay: 40 }}
 					out:fly={{ x: -30, duration: 180 }}
-					class="content-transition-slot no-scrollbar max-w-lg mx-auto w-full px-4 {isResultsPage ? 'pt-2' : 'pt-8'} {isCarregandoPage || isResultsPage ? 'pb-2' : hideNavOnThisPage ? 'pb-8' : 'pb-32'}"
+					class="content-transition-slot no-scrollbar max-w-lg mx-auto w-full px-4 {isResultsPage ? 'pt-2' : 'pt-8 overflow-y-auto overflow-x-hidden'} {isCarregandoPage || isResultsPage ? 'pb-2' : hideNavOnThisPage ? 'pb-8' : 'pb-32'}"
 					style="pointer-events: auto;"
 				>
 					{@render children()}
@@ -188,6 +192,7 @@
 <style>
 	:global(body.results-page-scroll-lock) {
 		overflow: hidden;
+		overscroll-behavior: none;
 	}
 	:global(.no-scrollbar)::-webkit-scrollbar {
 		width: 0;
@@ -220,8 +225,6 @@
 		flex-direction: column;
 		align-items: stretch;
 		min-height: 0;
-		overflow-y: auto;
-		overflow-x: hidden;
 		width: 100%;
 		max-width: 32rem;
 		box-sizing: border-box;
@@ -232,7 +235,6 @@
 		min-height: auto;
 	}
 	:global(.post-quiz-results-scroll) .content-transition-slot {
-		overflow-y: visible;
 		min-height: auto;
 	}
 	:global(.post-quiz-results-scroll) .content-transition-slot > * {

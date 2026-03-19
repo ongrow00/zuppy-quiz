@@ -35,6 +35,10 @@
 		return kgToReach > 0 ? Math.ceil(kgToReach * 2) : 12;
 	});
 
+	/** Previsão nunca superior a 6 meses para a data exibida */
+	const MAX_WEEKS_PREVISAO = 26; // 6 meses
+	const weeksParaData = $derived(Math.min(weeksEstimate, MAX_WEEKS_PREVISAO));
+
 	const MESES: string[] = [
 		'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
 		'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
@@ -42,7 +46,7 @@
 
 	const dataPrevisaoFormatada = $derived.by(() => {
 		const d = new Date();
-		d.setDate(d.getDate() + weeksEstimate * 7);
+		d.setDate(d.getDate() + weeksParaData * 7);
 		const dia = d.getDate();
 		const mes = MESES[d.getMonth()];
 		return `${dia} de ${mes}`;
@@ -64,7 +68,7 @@
 
 	onMount(() => {
 		const finalDate = new Date();
-		finalDate.setDate(finalDate.getDate() + weeksEstimate * 7);
+		finalDate.setDate(finalDate.getDate() + weeksParaData * 7);
 		const endTime = finalDate.getTime();
 		const finalStr = `${finalDate.getDate()} de ${MESES[finalDate.getMonth()]}`;
 
@@ -104,7 +108,7 @@
 		<WeightLossLineChart
 			currentKg={currentKg ?? (goalKg ?? 75) + 5}
 			goalKg={goalKg ?? headlineKg}
-			weeks={weeksEstimate}
+			weeks={weeksParaData}
 		/>
 	</div>
 	<ul class="w-full text-left mt-6 flex flex-col gap-3 text-[14px] leading-[14px] text-black">

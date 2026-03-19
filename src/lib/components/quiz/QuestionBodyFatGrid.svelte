@@ -176,20 +176,23 @@
 	<!-- Slider: 6 estágios — abaixo da imagem, sem sobrepor -->
 	<div class="relative flex flex-col gap-3 w-full mt-0">
 		<div class="relative w-full h-8 flex items-center">
-			<input
-				type="range"
-				min={0}
-				max={STAGES - 1}
-				step={1}
-				value={stageIndex}
-				oninput={handleSliderInput}
-				onchange={handleSliderChange}
-				aria-valuemin={0}
-				aria-valuemax={STAGES - 1}
-				aria-valuenow={stageIndex}
-				aria-label="Selecione o estágio que mais se parece com você"
-				class="body-fat-range relative z-0 w-full h-3 rounded-full appearance-none bg-line accent-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg px-[10%]"
-			/>
+			<!-- Wrapper com padding para que o input ocupe apenas 80% central, sem usar padding no próprio input (evita bug de posicionamento do thumb em iOS/Safari) -->
+			<div class="absolute inset-y-0 left-[10%] right-[10%] flex items-center">
+				<input
+					type="range"
+					min={0}
+					max={STAGES - 1}
+					step={1}
+					value={stageIndex}
+					oninput={handleSliderInput}
+					onchange={handleSliderChange}
+					aria-valuemin={0}
+					aria-valuemax={STAGES - 1}
+					aria-valuenow={stageIndex}
+					aria-label="Selecione o estágio que mais se parece com você"
+					class="body-fat-range relative z-0 w-full h-3 rounded-full appearance-none bg-line accent-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+				/>
+			</div>
 			<!-- Pontinhos: 6 posições (10% a 90%); selecionado = branco no centro -->
 			<div class="absolute inset-0 flex items-center pointer-events-none z-10" aria-hidden="true">
 				{#each Array.from({ length: STAGES }, (_, i) => i) as i}

@@ -8,9 +8,11 @@
 		carboidratoG: number;
 		gorduraG: number;
 		fibraG: number;
+		/** Quando definido, cliques nos gauges de macro e no cadeado levam à seção de oferta */
+		scrollToOffer?: () => void;
 	}
 
-	let { includeBreakfast, mealCount, caloriasMeta, deficitCalorico, proteinaG, carboidratoG, gorduraG, fibraG }: Props = $props();
+	let { includeBreakfast, mealCount, caloriasMeta, deficitCalorico, proteinaG, carboidratoG, gorduraG, fibraG, scrollToOffer }: Props = $props();
 
 	const macros = $derived.by(() => {
 		const defs = [
@@ -168,7 +170,15 @@
 		<div class="flex justify-between gap-0">
 			{#each macros as macro}
 				<div class="flex min-w-0 flex-1 flex-col items-center gap-0">
-					<div class="relative inline-block">
+					<div
+						class="relative inline-block"
+						class:cursor-pointer={!!scrollToOffer}
+						role={scrollToOffer ? 'button' : undefined}
+						tabindex={scrollToOffer ? 0 : undefined}
+						aria-label={scrollToOffer ? 'Ir para oferta' : undefined}
+						onclick={scrollToOffer}
+						onkeydown={scrollToOffer ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); scrollToOffer(); } } : undefined}
+					>
 						<svg width="64" height="52" viewBox="0 0 64 64" fill="none" class="max-w-full block">
 						<circle
 							cx={CX} cy={CY} r={R}
@@ -200,7 +210,7 @@
 							{macro.grams}g
 						</text>
 					</svg>
-						<div class="macro-gauge-lock absolute inset-0 flex items-center justify-center pointer-events-none">
+						<div class="macro-gauge-lock absolute inset-0 flex items-center justify-center {scrollToOffer ? '' : 'pointer-events-none'}">
 							<i class="fa-solid fa-lock text-heading text-sm opacity-90" aria-hidden="true"></i>
 						</div>
 					</div>
@@ -222,6 +232,12 @@
 			{#each meals as meal}
 				<div
 					class="flex items-center gap-3 border border-line rounded-xl px-3 py-3 shrink-0"
+					class:cursor-pointer={!!scrollToOffer}
+					role={scrollToOffer ? 'button' : undefined}
+					tabindex={scrollToOffer ? 0 : undefined}
+					aria-label={scrollToOffer ? 'Ir para oferta' : undefined}
+					onclick={scrollToOffer}
+					onkeydown={scrollToOffer ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); scrollToOffer(); } } : undefined}
 					style="width: calc(70% - 0.25rem); scroll-snap-align: start;"
 				>
 					<div class="w-10 h-10 shrink-0 rounded-lg flex items-center justify-center meal-icon-bg">

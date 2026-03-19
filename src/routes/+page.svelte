@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { quizStore } from '$lib/stores/quiz.store';
 	import { trackQuizStart } from '$lib/services/analytics.service';
@@ -10,18 +11,20 @@
 	const firstQuestion = $derived(computeVisibleQuestions(quizConfig.questions, {})[0]);
 
 	let transitioning = $state(false);
-	let footerVisible = $state(false);
-	let mainEl: HTMLElement | undefined = $state(undefined);
+	let mainEl = $state<HTMLElement | null>(null);
+	let showFooter = $state(false);
+	const SCROLL_THRESHOLD = 80;
 
-	$effect(() => {
-		const el = mainEl;
-		if (!el) return;
-		const onScroll = () => {
-			footerVisible = el.scrollTop > 60;
-		};
-		el.addEventListener('scroll', onScroll, { passive: true });
-		onScroll(); // checa estado inicial
-		return () => el.removeEventListener('scroll', onScroll);
+	function updateShowFooter() {
+		const windowY = typeof window !== 'undefined' ? window.scrollY ?? document.documentElement.scrollTop : 0;
+		const mainScroll = mainEl?.scrollTop ?? 0;
+		showFooter = windowY > SCROLL_THRESHOLD || mainScroll > SCROLL_THRESHOLD;
+	}
+
+	onMount(() => {
+		updateShowFooter();
+		window.addEventListener('scroll', updateShowFooter, { passive: true });
+		return () => window.removeEventListener('scroll', updateShowFooter);
 	});
 
 	async function startQuiz() {
@@ -56,6 +59,7 @@
 	<!-- Conteúdo centralizado na tela; rodapé só aparece ao rolar -->
 	<main
 		bind:this={mainEl}
+		onscroll={updateShowFooter}
 		class="flex-1 flex flex-col items-center px-4 pt-[50px] pb-40 min-h-0 overflow-y-auto"
 	>
 		<div class="flex-1 flex flex-col justify-center w-full max-w-lg">
@@ -75,13 +79,13 @@
 		<!-- Espaço para que o rodapé fique abaixo da dobra -->
 		<div class="w-full min-h-[45vh]" aria-hidden="true"></div>
 
-		<!-- Footer (só visível após o usuário rolar a tela) -->
+		<!-- Footer (só visível após o usuário rolar a tela; some ao voltar) -->
 		<footer
 			class="w-full max-w-lg mx-auto text-left pt-4 border-t border-line mt-2 transition-opacity duration-300 ease-out"
-			class:invisible={!footerVisible}
-			class:opacity-0={!footerVisible}
-			class:opacity-100={footerVisible}
-			aria-hidden={!footerVisible}
+			class:opacity-0={!showFooter}
+			class:pointer-events-none={!showFooter}
+			class:invisible={!showFooter}
+			aria-hidden={!showFooter}
 		>
 				<p class="text-[10px] text-muted/60 leading-none mb-1">© 2026 Zuppy. Todos os direitos reservados.</p>
 				<p class="text-[10px] text-muted/60 leading-none mb-4">CNPJ: 46.737.539/0001-29</p>
