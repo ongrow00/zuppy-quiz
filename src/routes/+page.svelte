@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import lottie from 'lottie-web';
 	import type { AnimationItem } from 'lottie-web';
 	import { quizStore } from '$lib/stores/quiz.store';
 	import { trackQuizStart } from '$lib/services/analytics.service';
@@ -30,12 +29,15 @@
 
 		let heroAnim: AnimationItem | null = null;
 		if (heroLottieEl) {
-			heroAnim = lottie.loadAnimation({
-				container: heroLottieEl,
-				renderer: 'svg',
-				loop: true,
-				autoplay: true,
-				path: '/assets/home-headline-lottie.json'
+			const el = heroLottieEl;
+			import('lottie-web').then(({ default: lottie }) => {
+				heroAnim = lottie.loadAnimation({
+					container: el,
+					renderer: 'svg',
+					loop: true,
+					autoplay: true,
+					path: '/assets/home-headline-lottie.json'
+				});
 			});
 		}
 
@@ -167,6 +169,12 @@
 </div>
 
 <style>
+	/* Promove o botão ao compositor para que o ::after animado (dentro de overflow:hidden)
+	   também seja composto na GPU, evitando repaint no main thread */
+	.cta-shimmer {
+		will-change: transform;
+	}
+
 	/* translateX no compositor (evita animar background-position) */
 	.cta-shimmer::after {
 		content: '';
