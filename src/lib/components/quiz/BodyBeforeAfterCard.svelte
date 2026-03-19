@@ -104,7 +104,7 @@
 		<div class="flex-1 px-4 pt-3 pb-3">
 			<p class="text-xs text-muted mb-0.5">Gordura corporal</p>
 			{#if currentBfPercent != null}
-				<p class="text-lg font-extrabold text-[#0A2305]">≈ {currentBfPercent}%</p>
+				<p class="text-lg font-extrabold text-[#0A2305]">± {currentBfPercent}%</p>
 				<p class="text-[10px] text-muted leading-none mt-0.5">{currentFatLabel}</p>
 			{:else}
 				<p class="text-lg font-extrabold text-[#0A2305]">{currentFatLabel}</p>
@@ -114,7 +114,7 @@
 		<div class="flex-1 px-4 pt-3 pb-3">
 			<p class="text-xs text-muted mb-0.5">Gordura corporal</p>
 			{#if goalBfPercent != null}
-				<p class="text-lg font-extrabold text-[#0A2305]">≈ {goalBfPercent}%</p>
+				<p class="text-lg font-extrabold text-[#0A2305]">± {goalBfPercent}%</p>
 				<p class="text-[10px] text-muted leading-none mt-0.5">{goalFatLabel}</p>
 			{:else}
 				<p class="text-lg font-extrabold text-[#0A2305]">{goalFatLabel}</p>

@@ -14,6 +14,12 @@
 
 	let { includeBreakfast, mealCount, caloriasMeta, deficitCalorico, proteinaG, carboidratoG, gorduraG, fibraG, scrollToOffer }: Props = $props();
 
+	/** Superávit (ganhar massa) = deficitCalorico negativo; Déficit (emagrecer) = positivo */
+	const isSurplus = $derived(deficitCalorico < 0);
+	const deficitOuSurplusLabel = $derived(isSurplus ? 'Superávit calórico' : 'Déficit calórico');
+	const deficitOuSurplusValor = $derived(Math.abs(deficitCalorico));
+	const lineChartColor = $derived(isSurplus ? '#8ED33A' : '#E07070');
+
 	const macros = $derived.by(() => {
 		const defs = [
 			{ label: 'Proteína', grams: proteinaG,    kcalPerG: 4 },
@@ -151,14 +157,14 @@
 		<div class="w-px bg-line"></div>
 
 		<div class="flex-1 min-w-0 px-4 pt-3 pb-3">
-			<p class="text-xs text-muted mb-1">Déficit calórico</p>
+			<p class="text-xs text-muted mb-1">{deficitOuSurplusLabel}</p>
 			<p class="text-xl font-extrabold text-heading leading-none mb-3">
-				{deficitCalorico.toLocaleString('pt-BR')}
+				{deficitOuSurplusValor.toLocaleString('pt-BR')}
 				<span class="text-xs font-normal text-muted"> /Kcal dia</span>
 			</p>
 			<div class="h-8 flex items-center">
 				<svg viewBox="0 0 110 36" class="w-full h-full" fill="none">
-					<path d={linePoints} stroke="#E07070" stroke-width="2" stroke-linecap="round" />
+					<path d={linePoints} stroke={lineChartColor} stroke-width="2" stroke-linecap="round" />
 				</svg>
 			</div>
 		</div>
