@@ -91,9 +91,16 @@
 </div>
 
 <style>
-	@keyframes records-calorie-border-rotate {
+	/* Mesmo efeito de borda do SocialProof (home): @property + conic-gradient animado */
+	@property --border-angle {
+		syntax: '<angle>';
+		initial-value: 0deg;
+		inherits: false;
+	}
+
+	@keyframes records-calorie-border-spin {
 		to {
-			transform: rotate(360deg);
+			--border-angle: 360deg;
 		}
 	}
 
@@ -114,13 +121,8 @@
 		inset: 0;
 		border-radius: 10px;
 		pointer-events: none;
-		overflow: hidden;
-		/* Fade: visível no topo/lados, some no bottom */
-		-webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 88%);
-		mask-image: linear-gradient(to bottom, black 50%, transparent 88%);
 	}
 
-	/* ::before: conic-gradient girando, mascarado para só aparecer nos 2px da borda */
 	.records-calorie__glow-border::before {
 		content: '';
 		position: absolute;
@@ -128,7 +130,7 @@
 		border-radius: 10px;
 		padding: 2px;
 		background: conic-gradient(
-			from 0deg,
+			from var(--border-angle),
 			transparent 0%,
 			transparent 75%,
 			rgba(100, 190, 20, 0.3) 82%,
@@ -139,12 +141,9 @@
 			#6ab820 97%,
 			transparent 100%
 		);
-		animation: records-calorie-border-rotate 9s linear infinite;
-		transform-origin: center center;
-		/* Mostra apenas a faixa de 2px da borda, interior limpo */
+		animation: records-calorie-border-spin 9s linear infinite;
 		-webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
 		-webkit-mask-composite: xor;
-		mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
 		mask-composite: exclude;
 	}
 
@@ -155,6 +154,7 @@
 		border-radius: 8px;
 		padding: 14px 16px 0;
 		position: relative;
+		border: 1px solid var(--color-line, #e8e8e8);
 	}
 
 	.records-calorie__row {
