@@ -167,29 +167,30 @@
 </div>
 
 <style>
+	/* translateX no compositor (evita animar background-position) */
 	.cta-shimmer::after {
 		content: '';
 		position: absolute;
-		inset: 0;
+		top: 0;
+		left: -55%;
+		width: 55%;
+		height: 100%;
 		background: linear-gradient(
 			105deg,
 			transparent 0%,
-			transparent 35%,
 			rgba(255, 255, 255, 0.25) 50%,
-			transparent 65%,
 			transparent 100%
 		);
-		background-size: 200% 100%;
-		animation: shimmer 2.5s ease-in-out infinite;
+		animation: cta-shimmer-x 2.5s ease-in-out infinite;
 		pointer-events: none;
 	}
 
-	@keyframes shimmer {
+	@keyframes cta-shimmer-x {
 		0% {
-			background-position: 200% 0;
+			transform: translateX(-10%);
 		}
 		100% {
-			background-position: -200% 0;
+			transform: translateX(320%);
 		}
 	}
 </style>

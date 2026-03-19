@@ -1,6 +1,14 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { browser } from '$app/environment';
+	import { FontAwesomeIcon } from '@fortawesome/svelte-fontawesome';
+	import { faWhatsapp } from '@fortawesome/free-brands-svg-icons';
+	import {
+		faCheck,
+		faChevronDown,
+		faFire,
+		faTriangleExclamation
+	} from '@fortawesome/free-solid-svg-icons';
 	import { quizStore } from '$lib/stores/quiz.store';
 	import { postQuizStore } from '$lib/stores/post-quiz.store';
 	import BodyBeforeAfterCard from '$lib/components/quiz/BodyBeforeAfterCard.svelte';
@@ -347,12 +355,19 @@
 			<div class="flex items-center gap-4">
 				<div class="feature-thumb shrink-0 flex flex-col items-center justify-end p-3">
 					<div class="flex items-center justify-center gap-1.5">
-						<i class="fa-solid fa-check text-nutrition-green text-[11px] shrink-0"></i>
+						<span class="results-fa results-fa--11 text-nutrition-green shrink-0" aria-hidden="true">
+							<FontAwesomeIcon icon={faCheck} />
+						</span>
 						<p class="text-[11px] font-medium text-heading leading-none">1 Pizza</p>
 					</div>
 				</div>
 				<div>
-					<p class="text-sm font-bold text-heading mb-1">Controle no WhatsApp <i class="fa-brands fa-whatsapp text-green-500"></i></p>
+					<p class="text-sm font-bold text-heading mb-1 inline-flex items-center gap-1 flex-wrap">
+						Controle no WhatsApp
+						<span class="results-fa results-fa--16 text-green-500 shrink-0" aria-hidden="true">
+							<FontAwesomeIcon icon={faWhatsapp} />
+						</span>
+					</p>
 					<p class="text-xs text-muted leading-[12px]">Registre qualquer refeição com apenas uma foto, áudio ou texto no seu WhatsApp de uma maneira super rápida.</p>
 				</div>
 			</div>
@@ -361,8 +376,11 @@
 			<div class="flex items-center gap-4">
 				<div class="feature-thumb shrink-0 flex flex-col items-start justify-end p-3">
 					<p class="text-[9px] text-muted mb-1">12:15 PM</p>
-					<p class="whitespace-nowrap text-[8px] font-bold text-heading leading-none">
-						<i class="fa-solid fa-fire text-nutrition-green text-[7px]"></i> {Math.round(calorieProfile.caloriasMeta / mealCount)} kcal
+					<p class="whitespace-nowrap text-[8px] font-bold text-heading leading-none inline-flex items-center gap-0.5">
+						<span class="results-fa results-fa--7 text-nutrition-green shrink-0" aria-hidden="true">
+							<FontAwesomeIcon icon={faFire} />
+						</span>
+						{Math.round(calorieProfile.caloriasMeta / mealCount)} kcal
 					</p>
 				</div>
 				<div>
@@ -435,7 +453,9 @@
 					<p
 						class="mt-1 flex w-full items-center justify-center gap-0.5 text-[7px] font-medium leading-none text-muted"
 					>
-						<i class="fa-solid fa-fire shrink-0 text-nutrition-green text-[6px]"></i>
+						<span class="results-fa results-fa--6 shrink-0 text-nutrition-green" aria-hidden="true">
+							<FontAwesomeIcon icon={faFire} />
+						</span>
 						<span>480 kcal</span>
 					</p>
 				</div>
@@ -605,7 +625,7 @@
 			</div>
 		</div>
 
-		<ResultsOffer bind:selectedPlan {plans} {actionVerb} class="mt-6" />
+		<ResultsOffer bind:selectedPlan {plans} {actionVerb} {planObjectiveLabel} class="mt-6" />
 
 		<!-- Veja o Zuppy por dentro -->
 		<div class="mt-10">
@@ -674,11 +694,13 @@
 							aria-expanded={openFaq === i}
 						>
 							<span class="text-sm font-semibold text-heading leading-none">{i + 1}. {faq.q}</span>
-							<i
-								class="fa-solid fa-chevron-down text-muted text-xs shrink-0 transition-transform duration-200"
+							<span
+								class="results-fa results-fa--12 text-muted shrink-0 transition-transform duration-200"
 								style="transform: rotate({openFaq === i ? '180deg' : '0deg'})"
 								aria-hidden="true"
-							></i>
+							>
+								<FontAwesomeIcon icon={faChevronDown} />
+							</span>
 						</button>
 						{#if openFaq === i}
 							<p class="text-sm text-muted leading-none pb-4">{@html faq.a}</p>
@@ -691,7 +713,9 @@
 
 		<!-- Disclaimer -->
 		<div class="mt-6 flex gap-3 p-4 rounded-2xl bg-[#fffbeb] border border-amber-200">
-			<i class="fa-solid fa-triangle-exclamation text-amber-600 text-lg shrink-0 mt-0.5" aria-hidden="true"></i>
+			<span class="results-fa results-fa--18 text-amber-600 shrink-0 mt-0.5" aria-hidden="true">
+				<FontAwesomeIcon icon={faTriangleExclamation} />
+			</span>
 			<p class="text-xs text-amber-900/90 leading-[14px]">
 				O Zuppy é uma ferramenta de apoio ao controle alimentar e não substitui o acompanhamento de médicos, nutricionistas ou outros profissionais de saúde. Os resultados podem variar de pessoa para pessoa. Consulte um profissional de saúde antes de iniciar qualquer programa de emagrecimento.
 			</p>
@@ -730,6 +754,48 @@
 </div>
 
 <style>
+	.results-fa {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.results-fa :global(svg) {
+		display: block;
+		width: 100%;
+		height: 100%;
+	}
+
+	.results-fa--6 {
+		width: 6px;
+		height: 6px;
+	}
+
+	.results-fa--7 {
+		width: 7px;
+		height: 7px;
+	}
+
+	.results-fa--11 {
+		width: 11px;
+		height: 11px;
+	}
+
+	.results-fa--12 {
+		width: 12px;
+		height: 12px;
+	}
+
+	.results-fa--16 {
+		width: 16px;
+		height: 16px;
+	}
+
+	.results-fa--18 {
+		width: 18px;
+		height: 18px;
+	}
+
 	/* Line-height 14px for all 12px (text-xs) copy on this page */
 	.results-content :global(.text-xs) {
 		line-height: 14px;

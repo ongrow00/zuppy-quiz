@@ -1,4 +1,17 @@
 <script lang="ts">
+	import { FontAwesomeIcon } from '@fortawesome/svelte-fontawesome';
+	import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
+	import {
+		faAppleWhole,
+		faCookie,
+		faFire,
+		faGlassWater,
+		faLock,
+		faMoon,
+		faMugHot,
+		faUtensils
+	} from '@fortawesome/free-solid-svg-icons';
+
 	interface Props {
 		includeBreakfast: boolean;
 		mealCount: number;
@@ -69,15 +82,15 @@
 		'M4,20 C14,8 22,28 32,12 C42,28 50,8 60,22 C70,8 78,28 88,14 C96,26 100,10 106,20';
 
 	// ── Cardápio personalizado ──────────────────────────────────────────────
-	type Meal = { name: string; icon: string; kcal: number };
+	type Meal = { name: string; icon: IconDefinition; kcal: number };
 
 	const ALL_MEALS: Meal[] = [
-		{ name: 'Café',            icon: 'fa-solid fa-mug-hot',      kcal: 0 },
-		{ name: 'Lanche da manhã', icon: 'fa-solid fa-apple-whole',  kcal: 0 },
-		{ name: 'Almoço',          icon: 'fa-solid fa-utensils',     kcal: 0 },
-		{ name: 'Lanche da tarde', icon: 'fa-solid fa-cookie',       kcal: 0 },
-		{ name: 'Jantar',          icon: 'fa-solid fa-moon',         kcal: 0 },
-		{ name: 'Ceia',            icon: 'fa-solid fa-glass-water',  kcal: 0 }
+		{ name: 'Café', icon: faMugHot, kcal: 0 },
+		{ name: 'Lanche da manhã', icon: faAppleWhole, kcal: 0 },
+		{ name: 'Almoço', icon: faUtensils, kcal: 0 },
+		{ name: 'Lanche da tarde', icon: faCookie, kcal: 0 },
+		{ name: 'Jantar', icon: faMoon, kcal: 0 },
+		{ name: 'Ceia', icon: faGlassWater, kcal: 0 }
 	];
 
 	/** Distribui as calorias do dia de forma aleatória entre N refeições (soma = total). */
@@ -217,7 +230,9 @@
 						</text>
 					</svg>
 						<div class="macro-gauge-lock absolute inset-0 flex items-center justify-center {scrollToOffer ? '' : 'pointer-events-none'}">
-							<i class="fa-solid fa-lock text-heading text-sm opacity-90" aria-hidden="true"></i>
+							<span class="nutrition-fa nutrition-fa--sm text-heading opacity-90" aria-hidden="true">
+								<FontAwesomeIcon icon={faLock} />
+							</span>
 						</div>
 					</div>
 					<p class="text-[10px] text-muted text-center leading-tight">{macro.label}</p>
@@ -247,18 +262,27 @@
 					style="width: calc(70% - 0.25rem); scroll-snap-align: start;"
 				>
 					<div class="w-10 h-10 shrink-0 rounded-lg flex items-center justify-center meal-icon-bg">
-						<i class="{meal.icon} text-base text-heading"></i>
+						<span class="nutrition-fa nutrition-fa--md text-heading" aria-hidden="true">
+							<FontAwesomeIcon icon={meal.icon} />
+						</span>
 					</div>
 					<div class="flex-1 min-w-0">
 						<p class="text-xs font-medium text-heading leading-none mb-1">{meal.name}</p>
-						<p class="text-xs text-muted leading-none mb-0.5">
-							<i class="fa-solid fa-fire text-[10px] text-[var(--color-nutrition-green-dark)]"></i>
+						<p class="text-xs text-muted leading-none mb-0.5 inline-flex items-center gap-0.5">
+							<span
+								class="nutrition-fa nutrition-fa--xs shrink-0 text-[var(--color-nutrition-green-dark)]"
+								aria-hidden="true"
+							>
+								<FontAwesomeIcon icon={faFire} />
+							</span>
 							<span aria-hidden="true">**** kcal</span>
 							<span class="sr-only">{meal.kcal} kcal</span>
 						</p>
 						<p class="text-xs text-muted leading-none">3 Opções</p>
 					</div>
-					<i class="fa-solid fa-lock text-xs text-muted shrink-0" aria-hidden="true"></i>
+					<span class="nutrition-fa nutrition-fa--xs text-muted shrink-0" aria-hidden="true">
+						<FontAwesomeIcon icon={faLock} />
+					</span>
 				</div>
 			{/each}
 		</div>
@@ -304,6 +328,33 @@
 	/* Ícone da refeição: cinza escuro com 5% de opacidade */
 	.meal-icon-bg {
 		background-color: rgba(58, 58, 62, 0.05);
+	}
+
+	.nutrition-fa {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.nutrition-fa :global(svg) {
+		display: block;
+		width: 100%;
+		height: 100%;
+	}
+
+	.nutrition-fa--xs {
+		width: 10px;
+		height: 10px;
+	}
+
+	.nutrition-fa--sm {
+		width: 14px;
+		height: 14px;
+	}
+
+	.nutrition-fa--md {
+		width: 16px;
+		height: 16px;
 	}
 
 </style>

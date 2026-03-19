@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { FontAwesomeIcon } from '@fortawesome/svelte-fontawesome';
+	import { faBullseye, faFire } from '@fortawesome/free-solid-svg-icons';
 
 	interface Props {
 		caloriesConsumed?: number;
@@ -54,13 +56,17 @@
 		<div class="records-calorie__card">
 			<div class="records-calorie__row records-calorie__cal-label">
 				<div class="records-calorie__cal-icon-wrap">
-					<i class="fa-solid fa-fire records-calorie__cal-icon" aria-hidden="true"></i>
+					<span class="records-calorie__cal-icon" aria-hidden="true">
+						<FontAwesomeIcon icon={faFire} />
+					</span>
 				</div>
 				<span class="records-calorie__cal-text">Calorias</span>
 			</div>
 
 			<div class="records-calorie__target">
-				<i class="fa-solid fa-bullseye records-calorie__target-icon" aria-hidden="true"></i>
+				<span class="records-calorie__target-icon" aria-hidden="true">
+					<FontAwesomeIcon icon={faBullseye} />
+				</span>
 				<span class="records-calorie__target-value">{calorieTarget.toLocaleString('pt-BR')} / meta diária</span>
 			</div>
 
@@ -85,14 +91,10 @@
 </div>
 
 <style>
-	@property --border-angle {
-		syntax: '<angle>';
-		initial-value: 0deg;
-		inherits: false;
-	}
-
-	@keyframes border-spin {
-		to { --border-angle: 360deg; }
+	@keyframes records-calorie-border-rotate {
+		to {
+			transform: rotate(360deg);
+		}
 	}
 
 	.records-calorie {
@@ -112,6 +114,7 @@
 		inset: 0;
 		border-radius: 10px;
 		pointer-events: none;
+		overflow: hidden;
 		/* Fade: visível no topo/lados, some no bottom */
 		-webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 88%);
 		mask-image: linear-gradient(to bottom, black 50%, transparent 88%);
@@ -125,21 +128,23 @@
 		border-radius: 10px;
 		padding: 2px;
 		background: conic-gradient(
-			from var(--border-angle),
+			from 0deg,
 			transparent 0%,
 			transparent 75%,
 			rgba(100, 190, 20, 0.3) 82%,
 			#6ab820 87%,
-			#8ED33A 91%,
-			#B6E635 93%,
-			#8ED33A 95%,
+			#8ed33a 91%,
+			#b6e635 93%,
+			#8ed33a 95%,
 			#6ab820 97%,
 			transparent 100%
 		);
-		animation: border-spin 9s linear infinite;
+		animation: records-calorie-border-rotate 9s linear infinite;
+		transform-origin: center center;
 		/* Mostra apenas a faixa de 2px da borda, interior limpo */
 		-webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
 		-webkit-mask-composite: xor;
+		mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
 		mask-composite: exclude;
 	}
 
@@ -177,9 +182,13 @@
 	}
 
 	.records-calorie__cal-icon {
-		font-size: 12px;
+		display: flex;
 		color: #0a2305;
-		line-height: 1;
+	}
+
+	.records-calorie__cal-icon :global(svg) {
+		width: 12px;
+		height: 12px;
 	}
 
 	.records-calorie__cal-text {
@@ -239,9 +248,13 @@
 	}
 
 	.records-calorie__target-icon {
-		font-size: 10px;
+		display: flex;
 		color: #8ed33a;
-		line-height: 1;
+	}
+
+	.records-calorie__target-icon :global(svg) {
+		width: 10px;
+		height: 10px;
 	}
 
 	.records-calorie__target-value {

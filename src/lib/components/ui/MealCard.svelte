@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { FontAwesomeIcon } from '@fortawesome/svelte-fontawesome';
+	import { faFire } from '@fortawesome/free-solid-svg-icons';
+
 	interface Props {
 		name: string;
 		kcal: number;
@@ -33,7 +36,9 @@
 			<span class="flap" class:flipping style="animation-delay: 60ms">{name}</span>
 		</span>
 		<div class="meal-kcal">
-			<i class="fa-solid fa-fire" aria-hidden="true"></i>
+			<span class="meal-kcal__fire" aria-hidden="true">
+				<FontAwesomeIcon icon={faFire} />
+			</span>
 			<span class="flap" class:flipping style="animation-delay: 120ms">{kcal}</span>
 			<span>kcal</span>
 		</div>
@@ -122,9 +127,15 @@
 		margin-top: 1px;
 	}
 
-	.meal-kcal i {
-		font-size: 11px;
+	.meal-kcal__fire {
+		display: inline-flex;
 		color: #0a2305;
+		flex-shrink: 0;
+	}
+
+	.meal-kcal__fire :global(svg) {
+		width: 11px;
+		height: 11px;
 	}
 
 	.meal-macros {

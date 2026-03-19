@@ -5,10 +5,10 @@
 	 * Pilha de avatares sobrepostos: opcionalmente um círculo com iniciais primeiro, depois as fotos em ordem aleatória.
 	 */
 	const AVATAR_SOURCES = [
-		{ src: '/avatars/zuppy_1.png', alt: '' },
-		{ src: '/avatars/zuppy_2.png', alt: '' },
-		{ src: '/avatars/zuppy_3.png', alt: '' },
-		{ src: '/avatars/zuppy_4.png', alt: '' }
+		{ src: '/avatars/zuppy_1.webp', alt: '' },
+		{ src: '/avatars/zuppy_2.webp', alt: '' },
+		{ src: '/avatars/zuppy_3.webp', alt: '' },
+		{ src: '/avatars/zuppy_4.webp', alt: '' }
 	] as const;
 
 	function shuffleRandom<T>(arr: T[]): T[] {
@@ -71,7 +71,14 @@
 			class="rounded-full border border-white/20 overflow-hidden flex-shrink-0 bg-surface {sizeClass}"
 			style="margin-left: {i === 0 && !initials ? '0' : overlap}; z-index: {total - 1 - i}"
 		>
-			<img src={avatar.src} alt={avatar.alt} class="w-full h-full object-cover" />
+			<img
+				src={avatar.src}
+				alt={avatar.alt}
+				width="40"
+				height="40"
+				class="w-full h-full object-cover"
+				decoding="async"
+			/>
 		</div>
 	{/each}
 </div>

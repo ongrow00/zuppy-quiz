@@ -33,7 +33,9 @@
 	}
 
 	@keyframes border-spin {
-		to { --border-angle: 360deg; }
+		to {
+			--border-angle: 360deg;
+		}
 	}
 
 	.social-proof {
@@ -64,9 +66,9 @@
 			transparent 75%,
 			rgba(100, 190, 20, 0.3) 82%,
 			#6ab820 87%,
-			#8ED33A 91%,
-			#B6E635 93%,
-			#8ED33A 95%,
+			#8ed33a 91%,
+			#b6e635 93%,
+			#8ed33a 95%,
 			#6ab820 97%,
 			transparent 100%
 		);

@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { FontAwesomeIcon } from '@fortawesome/svelte-fontawesome';
+	import { faWhatsapp } from '@fortawesome/free-brands-svg-icons';
+
 	type OfferPlan = {
 		id: string;
 		label: string;
@@ -122,7 +125,9 @@
 	</button>
 
 	<p class="mt-2 flex items-center justify-center gap-1.5 text-xs text-muted">
-		<i class="fa-brands fa-whatsapp text-green-500" aria-hidden="true"></i>
+		<span class="offer-fa-wa inline-flex shrink-0 items-center justify-center text-green-500" aria-hidden="true">
+			<FontAwesomeIcon icon={faWhatsapp} />
+		</span>
 		Acesso imediato no WhatsApp
 	</p>
 
@@ -142,26 +147,37 @@
 	.cta-shimmer::after {
 		content: '';
 		position: absolute;
-		inset: 0;
+		top: 0;
+		left: -55%;
+		width: 55%;
+		height: 100%;
 		background: linear-gradient(
 			105deg,
 			transparent 0%,
-			transparent 35%,
 			rgba(255, 255, 255, 0.25) 50%,
-			transparent 65%,
 			transparent 100%
 		);
-		background-size: 200% 100%;
-		animation: offer-cta-shimmer 2.5s ease-in-out infinite;
+		animation: offer-cta-shimmer-x 2.5s ease-in-out infinite;
 		pointer-events: none;
 	}
 
-	@keyframes offer-cta-shimmer {
+	@keyframes offer-cta-shimmer-x {
 		0% {
-			background-position: 200% 0;
+			transform: translateX(-10%);
 		}
 		100% {
-			background-position: -200% 0;
+			transform: translateX(320%);
 		}
+	}
+
+	.offer-fa-wa {
+		width: 0.875rem;
+		height: 0.875rem;
+	}
+
+	.offer-fa-wa :global(svg) {
+		display: block;
+		width: 100%;
+		height: 100%;
 	}
 </style>
