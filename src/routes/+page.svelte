@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
+	import lottie from 'lottie-web';
+	import type { AnimationItem } from 'lottie-web';
 	import { quizStore } from '$lib/stores/quiz.store';
 	import { trackQuizStart } from '$lib/services/analytics.service';
 	import Logo from '$lib/components/ui/Logo.svelte';
@@ -12,6 +14,7 @@
 
 	let transitioning = $state(false);
 	let mainEl = $state<HTMLElement | null>(null);
+	let heroLottieEl = $state<HTMLDivElement | null>(null);
 	let showFooter = $state(false);
 	const SCROLL_THRESHOLD = 80;
 
@@ -24,7 +27,22 @@
 	onMount(() => {
 		updateShowFooter();
 		window.addEventListener('scroll', updateShowFooter, { passive: true });
-		return () => window.removeEventListener('scroll', updateShowFooter);
+
+		let heroAnim: AnimationItem | null = null;
+		if (heroLottieEl) {
+			heroAnim = lottie.loadAnimation({
+				container: heroLottieEl,
+				renderer: 'svg',
+				loop: true,
+				autoplay: true,
+				path: '/assets/home-headline-lottie.json'
+			});
+		}
+
+		return () => {
+			window.removeEventListener('scroll', updateShowFooter);
+			heroAnim?.destroy();
+		};
 	});
 
 	async function startQuiz() {
@@ -64,15 +82,20 @@
 	>
 		<div class="flex-1 flex flex-col justify-center w-full max-w-lg">
 			<div class="text-center space-y-6">
-				<div class="flex justify-center">
-					<SocialProof />
-				</div>
+				<div
+					bind:this={heroLottieEl}
+					class="fitness-lottie-wrapper w-full max-w-md mx-auto aspect-[2/1] flex items-center justify-center -my-1 p-[20px]"
+					aria-hidden="true"
+				></div>
 				<h1 class="text-2xl md:text-3xl font-normal text-heading leading-[21px] relative z-10">
 					Receba um <strong class="font-bold text-accent">plano de calorias</strong> criado <strong class="font-bold text-accent">milimetricamente</strong> para <strong class="font-bold text-accent">seu corpo</strong> nos <strong class="font-bold text-accent">próximos minutos</strong>.
 				</h1>
 				<p class="text-sm text-body/80 leading-[14px]">
 					Responda algumas perguntas e descubra exatamente <strong class="font-bold text-accent">quanto e o que comer por dia</strong> para transformar seu corpo de <strong class="font-bold text-accent">acordo com seu biotipo</strong> sem abrir mão do que você gosta.
 				</p>
+				<div class="flex justify-center">
+					<SocialProof />
+				</div>
 			</div>
 		</div>
 
