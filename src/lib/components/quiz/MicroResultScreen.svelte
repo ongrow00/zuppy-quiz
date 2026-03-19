@@ -24,7 +24,7 @@
 	const CARREGANDO_STEPS = $derived([
 		{ label: 'Analisando biotipo e hábitos', durationMs: 3000 },
 		{ label: 'Calculando perfil corporal', durationMs: 4000, pauseAt: 60 },
-		{ label: `Criando plano de calorias para ${objetivoLabel}`, durationMs: 2000 },
+		{ label: criandoPlanoLabel, durationMs: 2000 },
 		{ label: `Criando cardápio para ${objetivoLabel}`, durationMs: 3000, pauseAt: 20 }
 	]);
 
@@ -56,6 +56,13 @@
 			: goalId === 'goal-massa'
 				? 'ganhar massa muscular'
 				: 'seu objetivo';
+	});
+	/** Texto do passo "Criando plano...": ganhar massa → "Criando plano para ganhar massa"; emagrecer → "Criando plano para emagrecer". */
+	const criandoPlanoLabel = $derived.by(() => {
+		const goalId = answers['goal_type'] as string | undefined;
+		return goalId === 'goal-massa'
+			? 'Criando plano para ganhar massa'
+			: `Criando plano para ${objetivoLabel}`;
 	});
 	const isMr1 = question.id === 'mr-1';
 	const contagemCtx = getContext<{ value: number }>('quizContagem');

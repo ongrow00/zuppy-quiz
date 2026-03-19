@@ -68,21 +68,28 @@
 		return '#' + part1 + part2;
 	});
 
+	// Scroll para pages não-results (scroll no container interno)
 	function onScroll() {
-		if (!scrollContainer || !isResultsPage) return;
-		const threshold = isResultsPage ? RESULTS_BANNER_SCROLL_THRESHOLD : STICKY_SCROLL_THRESHOLD;
-		showStickyBanner = scrollContainer.scrollTop >= threshold;
+		if (!scrollContainer || isResultsPage) return;
+		showStickyBanner = scrollContainer.scrollTop >= STICKY_SCROLL_THRESHOLD;
 	}
 
+	// Results usa window scroll — sem lock no body, sem div scroll container
 	$effect(() => {
-		if (!browser) return;
-		const onResults = pathname === '/results' || pathname.startsWith('/results/');
-		document.body.classList.toggle('results-page-scroll-lock', onResults);
-		if (onResults) {
-			document.documentElement.scrollTop = 0;
-			document.body.scrollTop = 0;
+		if (!browser || !isResultsPage) return;
+		function onWindowScroll() {
+			showStickyBanner = window.scrollY >= RESULTS_BANNER_SCROLL_THRESHOLD;
 		}
-		return () => document.body.classList.remove('results-page-scroll-lock');
+		window.addEventListener('scroll', onWindowScroll, { passive: true });
+		// Garante que o scroll começa do topo ao entrar na results
+		window.scrollTo(0, 0);
+		return () => window.removeEventListener('scroll', onWindowScroll);
+	});
+
+	// Quando sai da results (que usa window scroll), reseta o scroll do window
+	$effect(() => {
+		if (!browser || isResultsPage) return;
+		window.scrollTo(0, 0);
 	});
 
 	/** Countdown da oferta: inicia ao entrar na página de resultados e para ao sair. */
@@ -97,7 +104,7 @@
 	<StickyDiscountBanner visible={showStickyBanner} discountCode={discountCode} />
 {/if}
 <div
-	class="{isResultsPage ? 'post-quiz-results-scroll h-full min-h-0 flex flex-col overflow-y-auto overflow-x-hidden' : 'h-full min-h-0 flex flex-col overflow-hidden'}"
+	class="{isResultsPage ? 'post-quiz-results-scroll flex flex-col' : 'h-full min-h-0 max-h-[100dvh] flex flex-col overflow-hidden'}"
 	bind:this={scrollContainer}
 	onscroll={onScroll}
 >
@@ -161,7 +168,7 @@
 				<div
 					in:fly={{ x: 30, duration: 260, delay: 40 }}
 					out:fly={{ x: -30, duration: 180 }}
-					class="content-transition-slot no-scrollbar max-w-lg mx-auto w-full px-4 {isResultsPage ? 'pt-2' : 'pt-8 overflow-y-auto overflow-x-hidden'} {isCarregandoPage || isResultsPage ? 'pb-2' : hideNavOnThisPage ? 'pb-8' : 'pb-32'}"
+					class="content-transition-slot no-scrollbar max-w-lg mx-auto w-full px-4 {isResultsPage ? 'pt-2' : 'pt-4 overflow-y-auto overflow-x-hidden'} {isCarregandoPage || isResultsPage ? 'pb-2' : hideNavOnThisPage ? 'pb-8' : 'pb-32'}"
 					style="pointer-events: auto;"
 				>
 					{@render children()}
@@ -190,10 +197,6 @@
 </div>
 
 <style>
-	:global(body.results-page-scroll-lock) {
-		overflow: hidden;
-		overscroll-behavior: none;
-	}
 	:global(.no-scrollbar)::-webkit-scrollbar {
 		width: 0;
 		height: 0;
@@ -229,19 +232,7 @@
 		max-width: 32rem;
 		box-sizing: border-box;
 	}
-	/* Na results, o scroll é no container externo para o banner fixo funcionar */
-	:global(.post-quiz-results-scroll) .content-transition-root {
-		flex: none;
-		min-height: auto;
-	}
-	:global(.post-quiz-results-scroll) .content-transition-slot {
-		min-height: auto;
-	}
-	:global(.post-quiz-results-scroll) .content-transition-slot > * {
-		min-height: 0;
-	}
 	.content-transition-slot > * {
 		min-height: 100%;
 	}
-
 </style>

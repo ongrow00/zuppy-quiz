@@ -299,7 +299,7 @@
 	<div class="mt-4 flex items-center gap-3 border border-line rounded-full px-4 py-2.5">
 		<AvatarStack {initials} max={3} size="sm" variant="default" />
 		<p class="text-xs text-muted leading-tight">
-			Mais de 15.000 pessoas já emagreceram enviando uma foto no WhatsApp.
+			Mais de <span class="font-bold text-heading">15.000</span> pessoas já <span class="font-bold text-heading">emagreceram</span> enviando uma foto no <span class="font-bold text-heading">WhatsApp</span>.
 		</p>
 	</div>
 
