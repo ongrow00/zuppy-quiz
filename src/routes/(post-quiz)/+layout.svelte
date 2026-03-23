@@ -168,7 +168,7 @@
 				<div
 					in:fly={{ x: 30, duration: 260, delay: 40 }}
 					out:fly={{ x: -30, duration: 180 }}
-					class="content-transition-slot no-scrollbar max-w-lg mx-auto w-full px-4 {isResultsPage ? 'pt-2' : 'pt-4 overflow-y-auto overflow-x-hidden'} {isCarregandoPage || isResultsPage ? 'pb-2' : hideNavOnThisPage ? 'pb-8' : 'pb-32'}"
+					class="content-transition-slot no-scrollbar max-w-lg mx-auto w-full px-4 {isResultsPage ? 'pt-2' : 'pt-4 overflow-y-auto overflow-x-hidden'} {isCarregandoPage || isResultsPage ? 'pb-2' : isNomePage || isWhatsappPage ? 'pb-32' : 'pb-8'}"
 					style="pointer-events: auto;"
 				>
 					{@render children()}
@@ -177,7 +177,7 @@
 		</div>
 	</main>
 
-	{#if !hideNavOnThisPage && !isCarregandoPage && !isResultsPage}
+	{#if isNomePage || isWhatsappPage}
 	<div class="fixed bottom-0 left-0 right-0">
 		<div class="max-w-lg mx-auto w-full px-4 pt-4 pb-8">
 		<button
@@ -186,7 +186,7 @@
 			disabled={!canAdvance}
 			class="w-full h-[60px] flex items-center justify-center gap-2 rounded-2xl font-bold text-base bg-accent text-on-primary transition-all duration-200 active:scale-[0.98] hover:bg-accent-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg disabled:opacity-40 disabled:pointer-events-none"
 		>
-			<span>Ver Meu Plano</span>
+			<span>{isNomePage ? 'Continuar' : 'Ver Meu Plano'}</span>
 			<svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true">
 				<path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/>
 			</svg>
