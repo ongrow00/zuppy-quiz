@@ -83,6 +83,7 @@ export interface QuizState {
 	visitedQuestions: string[];
 	startedAt: number | null;
 	completedAt: number | null;
+	quizSessionId: string | null;
 }
 
 /** UTM params from the first URL the user landed on (campaign tracking) */

@@ -1,9 +1,11 @@
 import { browser } from '$app/environment';
-import { derived, writable } from 'svelte/store';
+import { derived, get, writable } from 'svelte/store';
 import { quizConfig } from '$lib/data/quiz.config';
 import type { Answers, CategoryKey, Question, QuizState, Scores } from '$lib/data/types';
 import { computeVisibleQuestions } from '$lib/utils/branching';
-import { calculateScores } from '$lib/utils/scoring';
+import { calculateScores, matchProfile } from '$lib/utils/scoring';
+import { sessionStore } from '$lib/stores/session.store';
+import { createSession, completeSession } from '$lib/services/supabase';
 
 const SESSION_KEY = 'zuppy-quiz-state';
 
@@ -15,7 +17,8 @@ const INITIAL_STATE: QuizState = {
 	scores: { ...INITIAL_SCORES },
 	visitedQuestions: [],
 	startedAt: null,
-	completedAt: null
+	completedAt: null,
+	quizSessionId: null
 };
 
 function loadFromSession(): QuizState {
@@ -52,13 +55,20 @@ function createQuizStore() {
 		start() {
 			const visible = computeVisibleQuestions(quizConfig.questions, {});
 			const firstQuestion = visible[0] ?? null;
+			const sessionId = browser ? crypto.randomUUID() : null;
+			const startedAt = Date.now();
 			update((s) =>
 				persist({
 					...INITIAL_STATE,
 					currentQuestionId: firstQuestion?.id ?? null,
-					startedAt: Date.now()
+					startedAt,
+					quizSessionId: sessionId
 				})
 			);
+			if (sessionId) {
+				const { utm, offer } = get(sessionStore);
+				createSession(sessionId, startedAt, utm, offer);
+			}
 		},
 
 		answer(questionId: string, value: string | string[]) {
@@ -80,7 +90,15 @@ function createQuizStore() {
 		},
 
 		complete() {
-			update((s) => persist({ ...s, completedAt: Date.now() }));
+			update((s) => {
+				const completedAt = Date.now();
+				const next = persist({ ...s, completedAt });
+				if (next.quizSessionId) {
+					const profile = matchProfile(next.scores, quizConfig.profiles);
+					completeSession(next.quizSessionId, completedAt, profile?.id ?? null);
+				}
+				return next;
+			});
 		},
 
 		reset() {

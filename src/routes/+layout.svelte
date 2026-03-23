@@ -5,11 +5,13 @@
 	import '../app.css';
 	import { sessionStore } from '$lib/stores/session.store';
 	import { initAnalytics } from '$lib/services/analytics.service';
+	import { initSupabase } from '$lib/services/supabase';
 
 	let { children } = $props();
 
 	onMount(() => {
 		initAnalytics();
+		initSupabase();
 	});
 
 	/** Sincroniza UTMs/offer com a URL em toda navegação (inclui primeira carga com ?utm_*=). */

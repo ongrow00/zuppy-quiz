@@ -7,8 +7,11 @@
 	import Logo from '$lib/components/ui/Logo.svelte';
 	import StickyDiscountBanner from '$lib/components/ui/StickyDiscountBanner.svelte';
 	import { start as startDiscountCountdown } from '$lib/stores/discount-countdown.store';
+	import { get } from 'svelte/store';
 	import { postQuizStore } from '$lib/stores/post-quiz.store';
+	import { quizStore } from '$lib/stores/quiz.store';
 	import { trackLeadName, trackLeadWhatsApp } from '$lib/services/analytics.service';
+	import { updateLead } from '$lib/services/supabase';
 
 	let { children } = $props();
 	let scrollContainer = $state<HTMLDivElement | null>(null);
@@ -185,8 +188,15 @@
 		<button
 			type="button"
 			onclick={() => {
-			if (isNomePage) trackLeadName();
-			if (isWhatsappPage) trackLeadWhatsApp($postQuizStore.whatsapp);
+			const sessionId = get(quizStore).quizSessionId;
+			if (isNomePage) {
+				trackLeadName();
+				if (sessionId) updateLead(sessionId, { name: $postQuizStore.name });
+			}
+			if (isWhatsappPage) {
+				trackLeadWhatsApp($postQuizStore.whatsapp);
+				if (sessionId) updateLead(sessionId, { name: $postQuizStore.name, whatsapp: $postQuizStore.whatsapp });
+			}
 			goto(nextUrl);
 		}}
 			disabled={!canAdvance}

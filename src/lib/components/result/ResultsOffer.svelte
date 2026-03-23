@@ -4,8 +4,10 @@
 	import { faWhatsapp } from '@fortawesome/free-brands-svg-icons';
 	import type { OfferPlan } from '$lib/data/offer-plans';
 	import { sessionStore } from '$lib/stores/session.store';
+	import { quizStore } from '$lib/stores/quiz.store';
 	import { appendHotmartBuyerParams } from '$lib/utils/hotmart-checkout';
 	import { trackPlanSelected, trackCheckoutInitiated } from '$lib/services/analytics.service';
+	import { savePlanSelected } from '$lib/services/supabase';
 
 	let {
 		actionVerb,
@@ -45,6 +47,8 @@
 	function goToCheckout() {
 		if (!selectedCheckoutUrl) return;
 		trackCheckoutInitiated(selectedPlan);
+		const sessionId = get(quizStore).quizSessionId;
+		if (sessionId) savePlanSelected(sessionId, selectedPlan);
 		const session = get(sessionStore);
 		const hasUtm = Object.values(session.utm).some((v) => Boolean(v && String(v).trim()));
 		const srcExtras =

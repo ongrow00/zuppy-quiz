@@ -12,6 +12,7 @@
 		quizNavigationEnded
 	} from '$lib/stores/quiz.store';
 	import { trackQuestionAnswer, trackQuizComplete, trackMr1Passed, trackMr2Passed, trackMr3Passed, trackMr4Passed } from '$lib/services/analytics.service';
+	import { updateAnswers } from '$lib/services/supabase';
 	import QuestionCard from './QuestionCard.svelte';
 	import InfoScreen from './InfoScreen.svelte';
 	import MicroResultScreen from './MicroResultScreen.svelte';
@@ -294,6 +295,10 @@
 		if (navigating.from != null || advancing) return;
 		quizStore.answer(questionId, value);
 		trackQuestionAnswer(questionId, value);
+		const state = get(quizStore);
+		if (state.quizSessionId) {
+			updateAnswers(state.quizSessionId, state.answers, state.scores, questionId, state.visitedQuestions);
+		}
 		if (isSingleChoiceQuestion) {
 			if (!question) return;
 			// Calcula próximo com a resposta já aplicada, para não depender de estado reativo no callback
