@@ -8,6 +8,7 @@
 	import StickyDiscountBanner from '$lib/components/ui/StickyDiscountBanner.svelte';
 	import { start as startDiscountCountdown } from '$lib/stores/discount-countdown.store';
 	import { postQuizStore } from '$lib/stores/post-quiz.store';
+	import { trackLeadName, trackLeadWhatsApp } from '$lib/services/analytics.service';
 
 	let { children } = $props();
 	let scrollContainer = $state<HTMLDivElement | null>(null);
@@ -183,7 +184,11 @@
 		<div class="max-w-lg mx-auto w-full px-4 pt-4 pb-8">
 		<button
 			type="button"
-			onclick={() => goto(nextUrl)}
+			onclick={() => {
+			if (isNomePage) trackLeadName();
+			if (isWhatsappPage) trackLeadWhatsApp($postQuizStore.whatsapp);
+			goto(nextUrl);
+		}}
 			disabled={!canAdvance}
 			class="w-full h-[60px] flex items-center justify-center gap-2 rounded-2xl font-bold text-base bg-accent text-on-primary transition-all duration-200 active:scale-[0.98] hover:bg-accent-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg disabled:opacity-40 disabled:pointer-events-none"
 		>

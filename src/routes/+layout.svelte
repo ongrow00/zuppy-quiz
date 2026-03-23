@@ -1,10 +1,16 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
 	import { page } from '$app/state';
 	import '../app.css';
 	import { sessionStore } from '$lib/stores/session.store';
+	import { initAnalytics } from '$lib/services/analytics.service';
 
 	let { children } = $props();
+
+	onMount(() => {
+		initAnalytics();
+	});
 
 	/** Sincroniza UTMs/offer com a URL em toda navegação (inclui primeira carga com ?utm_*=). */
 	$effect(() => {

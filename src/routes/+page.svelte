@@ -3,7 +3,9 @@
 	import { goto } from '$app/navigation';
 	import type { AnimationItem } from 'lottie-web';
 	import { quizStore } from '$lib/stores/quiz.store';
-	import { trackQuizStart } from '$lib/services/analytics.service';
+	import { trackQuizLanded, trackQuizStart } from '$lib/services/analytics.service';
+
+	declare const fbq: (...args: unknown[]) => void;
 	import Logo from '$lib/components/ui/Logo.svelte';
 	import SocialProof from '$lib/components/ui/SocialProof.svelte';
 	import { quizConfig } from '$lib/data/quiz.config';
@@ -25,6 +27,8 @@
 
 	onMount(() => {
 		updateShowFooter();
+		trackQuizLanded();
+		fbq('track', 'ViewContent');
 		window.addEventListener('scroll', updateShowFooter, { passive: true });
 
 		let heroAnim: AnimationItem | null = null;
@@ -53,6 +57,7 @@
 		await new Promise((r) => setTimeout(r, 450));
 		quizStore.start();
 		trackQuizStart();
+		fbq('track', 'AddToWishlist');
 		if (firstQuestion) goto(`/plan/${firstQuestion.id}`);
 	}
 </script>

@@ -5,6 +5,7 @@
 	import type { OfferPlan } from '$lib/data/offer-plans';
 	import { sessionStore } from '$lib/stores/session.store';
 	import { appendHotmartBuyerParams } from '$lib/utils/hotmart-checkout';
+	import { trackPlanSelected, trackCheckoutInitiated } from '$lib/services/analytics.service';
 
 	let {
 		actionVerb,
@@ -43,6 +44,7 @@
 
 	function goToCheckout() {
 		if (!selectedCheckoutUrl) return;
+		trackCheckoutInitiated(selectedPlan);
 		const session = get(sessionStore);
 		const hasUtm = Object.values(session.utm).some((v) => Boolean(v && String(v).trim()));
 		const srcExtras =
@@ -85,7 +87,7 @@
 			{#each plans as plan}
 				<button
 					type="button"
-					onclick={() => (selectedPlan = plan.id)}
+					onclick={() => { selectedPlan = plan.id; trackPlanSelected(plan.id); }}
 					class="w-full text-left rounded-2xl overflow-hidden bg-surface transition-all duration-200 transition-opacity"
 					class:opacity-60={!!selectedPlan && selectedPlan !== plan.id}
 					class:ring-2={selectedPlan === plan.id}

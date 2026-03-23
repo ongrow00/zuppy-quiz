@@ -11,7 +11,7 @@
 		nextQuestion,
 		quizNavigationEnded
 	} from '$lib/stores/quiz.store';
-	import { trackQuestionAnswer, trackQuizComplete } from '$lib/services/analytics.service';
+	import { trackQuestionAnswer, trackQuizComplete, trackMr1Passed, trackMr2Passed, trackMr3Passed, trackMr4Passed } from '$lib/services/analytics.service';
 	import QuestionCard from './QuestionCard.svelte';
 	import InfoScreen from './InfoScreen.svelte';
 	import MicroResultScreen from './MicroResultScreen.svelte';
@@ -331,11 +331,21 @@
 			: getNextStepFromStore();
 		const { nextId, isLast: last } = step;
 
+		if (question?.type === 'microresult') {
+			const mrTrackMap: Record<string, () => void> = {
+				'mr-1': trackMr1Passed,
+				'mr-2': trackMr2Passed,
+				'mr-3': trackMr3Passed,
+				'mr-4': trackMr4Passed,
+			};
+			mrTrackMap[question.id]?.();
+		}
+
 		if (last) {
 			advancing = true;
 			try {
 				quizStore.complete();
-				trackQuizComplete('');
+				trackQuizComplete();
 				await goto('/nome');
 			} finally {
 				advancing = false;

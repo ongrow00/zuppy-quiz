@@ -1,6 +1,10 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { browser } from '$app/environment';
+	import { trackResultsViewed } from '$lib/services/analytics.service';
+
+	declare const fbq: (...args: unknown[]) => void;
 	import { FontAwesomeIcon } from '@fortawesome/svelte-fontawesome';
 	import { faWhatsapp } from '@fortawesome/free-brands-svg-icons';
 	import {
@@ -142,6 +146,11 @@
 		{ title: 'Passo 2:', desc: 'Registre suas refeições como preferir. Foto, áudio ou texto. Qualquer alimento, qualquer hora do dia.' },
 		{ title: 'Passo 3:', desc: 'Acompanhe tudo direto no WhatsApp. Calorias, macros e progresso atualizados em tempo real.' }
 	]);
+
+	onMount(() => {
+		trackResultsViewed(quiz.answers['goal_type'] as string ?? '');
+		fbq('track', 'Lead');
+	});
 
 	$effect(() => {
 		if (!browser) return;

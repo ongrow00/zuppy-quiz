@@ -30,6 +30,7 @@
 		"@fortawesome/free-brands-svg-icons": "^7.2.0",
 		"@fortawesome/free-solid-svg-icons": "^7.2.0",
 		"@fortawesome/svelte-fontawesome": "^0.2.4",
-		"lottie-web": "^5.13.0"
+		"lottie-web": "^5.13.0",
+		"posthog-js": "^1.363.3"
 	}
 }
