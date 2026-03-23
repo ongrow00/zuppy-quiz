@@ -11,6 +11,9 @@
 
 	let { question, tag, center = false }: Props = $props();
 
+	/** Toggle visual do card “Protocolo Adaptado” (tela info medicamento). */
+	let protocolAdaptedOn = $state(true);
+
 	const title = $derived(question.copyTitle ?? question.text);
 	const body = $derived(question.copyBody ?? question.subtext ?? '');
 	const ctaText = $derived(question.ctaText ?? 'Continuar');
@@ -33,18 +36,29 @@
 		{/if}
 	</div>
 	{#if center}
-		<!-- Box estilo Apple: toggle "ligado" + Protocolo Adaptado (abaixo do texto) -->
-		<div
-			class="relative w-full rounded-2xl bg-surface-2 border border-line p-4 flex items-center gap-4 text-left overflow-hidden"
-			role="presentation"
+		<!-- Box estilo Apple: toggle interativo + Protocolo Adaptado -->
+		<button
+			type="button"
+			class="relative w-full rounded-2xl bg-surface-2 border border-line p-4 flex items-center gap-4 text-left overflow-hidden cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg active:scale-[0.99] transition-transform"
+			role="switch"
+			aria-checked={protocolAdaptedOn}
+			aria-label="Protocolo adaptado para uso de medicamento para emagrecimento"
+			onclick={() => (protocolAdaptedOn = !protocolAdaptedOn)}
 		>
 			<span
 				class="shimmer-overlay pointer-events-none absolute inset-0 z-0 rounded-2xl bg-gradient-to-r from-transparent via-white/[0.06] to-transparent"
 				aria-hidden="true"
 			></span>
-			<div class="relative z-10 shrink-0 w-11 h-7 rounded-full bg-accent transition-colors" aria-hidden="true">
+			<div
+				class="relative z-10 flex shrink-0 w-11 h-7 items-center rounded-full p-1 transition-colors {protocolAdaptedOn
+					? 'bg-accent'
+					: 'bg-[#C7C7CC]'}"
+				aria-hidden="true"
+			>
 				<span
-					class="absolute top-1 right-1 w-5 h-5 rounded-full bg-white shadow-sm transition-transform"
+					class="w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200 ease-out will-change-transform {protocolAdaptedOn
+						? 'translate-x-4'
+						: 'translate-x-0'}"
 				></span>
 			</div>
 			<div class="relative z-10 flex flex-col gap-0.5 min-w-0">
@@ -53,7 +67,7 @@
 					>Ajustar para respeitar o uso de medicamento para emagrecimento.</span
 				>
 			</div>
-		</div>
+		</button>
 	{/if}
 	<!-- CTA is rendered by QuizShell (fixed button with ctaText) -->
 </div>

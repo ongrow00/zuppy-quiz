@@ -18,16 +18,14 @@
 	import { calculateCalorieProfile, bodyFatPercentFromStage } from '$lib/utils/calories';
 	import { BODY_FAT_LABELS } from '$lib/assets/body-fat-config';
 	import { getRemaining, formatCountdown, TOTAL_SECONDS } from '$lib/stores/discount-countdown.store';
+	import { OFFER_PLANS } from '$lib/data/offer-plans';
 
 	const quiz = $derived($quizStore);
 	const name = $derived(($postQuizStore.name || '').trim() || 'Você');
+	const checkoutFullName = $derived(($postQuizStore.name || '').trim());
+	const checkoutWhatsapp = $derived(($postQuizStore.whatsapp || '').trim());
 
-	// Seletor de planos
-	const plans = [
-		{ id: 'mensal',    label: 'Plano Pro - Mensal',    oldPrice: 197, price: 117, monthly: 17,  badge: null },
-		{ id: 'semestral', label: 'Plano Pro - Semestral', oldPrice: 197, price: 117, monthly: 11,  badge: 'Mais Vendido' },
-		{ id: 'anual',     label: 'Plano Pro - Anual',     oldPrice: 197, price: 117, monthly: 8,   badge: null }
-	];
+	const plans = OFFER_PLANS;
 	let selectedPlan = $state('semestral');
 
 	const currentKg = $derived.by(() => {
@@ -311,7 +309,18 @@
 		</p>
 	</div>
 
-	<ResultsOffer bind:selectedPlan {plans} {actionVerb} {planObjectiveLabel} {name} {sexo} {age} objetivo={planObjectiveLabel} />
+	<ResultsOffer
+		bind:selectedPlan
+		{plans}
+		{actionVerb}
+		{planObjectiveLabel}
+		{name}
+		{checkoutFullName}
+		{checkoutWhatsapp}
+		{sexo}
+		{age}
+		objetivo={planObjectiveLabel}
+	/>
 
 	<!-- O que está incluso -->
 	<div class="mt-2 pb-10">
@@ -625,7 +634,20 @@
 			</div>
 		</div>
 
-		<ResultsOffer bind:selectedPlan {plans} {actionVerb} {planObjectiveLabel} class="mt-6" />
+		<ResultsOffer
+			bind:selectedPlan
+			{plans}
+			{actionVerb}
+			{planObjectiveLabel}
+			class="mt-6"
+			offerSectionId={null}
+			{name}
+			{checkoutFullName}
+			{checkoutWhatsapp}
+			{sexo}
+			{age}
+			objetivo={planObjectiveLabel}
+		/>
 
 		<!-- Veja o Zuppy por dentro -->
 		<div class="mt-10">

@@ -1,15 +1,8 @@
 <script lang="ts">
 	import { FontAwesomeIcon } from '@fortawesome/svelte-fontawesome';
 	import { faWhatsapp } from '@fortawesome/free-brands-svg-icons';
-
-	type OfferPlan = {
-		id: string;
-		label: string;
-		oldPrice: number;
-		price: number;
-		monthly: number;
-		badge: string | null;
-	};
+	import type { OfferPlan } from '$lib/data/offer-plans';
+	import { appendHotmartBuyerParams } from '$lib/utils/hotmart-checkout';
 
 	let {
 		actionVerb,
@@ -17,7 +10,12 @@
 		plans,
 		selectedPlan = $bindable(''),
 		class: className = '',
+		/** Só o primeiro bloco na página deve ter id (âncara scroll / banner). */
+		offerSectionId = 'offer-section',
 		name = 'Você',
+		/** Nome completo para pré-preencher o checkout Hotmart (sem fallback “Você”). */
+		checkoutFullName = '',
+		checkoutWhatsapp = '',
 		sexo = '',
 		age = '',
 		objetivo = ''
@@ -27,14 +25,31 @@
 		plans: OfferPlan[];
 		selectedPlan?: string;
 		class?: string;
+		offerSectionId?: string | null;
 		name?: string;
+		checkoutFullName?: string;
+		checkoutWhatsapp?: string;
 		sexo?: string;
 		age?: string;
 		objetivo?: string;
 	} = $props();
+
+	const selectedCheckoutUrl = $derived.by(() => {
+		const p = plans.find((x) => x.id === selectedPlan);
+		return p?.checkoutUrl ?? '';
+	});
+
+	function goToCheckout() {
+		if (!selectedCheckoutUrl) return;
+		const url = appendHotmartBuyerParams(selectedCheckoutUrl, {
+			fullName: checkoutFullName,
+			whatsapp: checkoutWhatsapp
+		});
+		window.location.assign(url);
+	}
 </script>
 
-<div id="offer-section" class="offer {className}">
+<div id={offerSectionId ?? undefined} class="offer {className}">
 	<!-- CTA header -->
 	<div class="mt-8 text-center">
 		<h2 class="text-2xl font-extrabold text-heading leading-none mb-3">
@@ -84,16 +99,16 @@
 								class:text-heading={selectedPlan === plan.id}
 							>{plan.label}</p>
 							<p class="text-xs leading-none flex flex-wrap items-center gap-1.5">
-								<span class="line-through text-muted">R${plan.oldPrice}</span>
-								<span class="text-muted ml-1">R${plan.price}</span>
-								<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[var(--color-nutrition-green)]/20 text-[var(--color-nutrition-green-dark)]">30% OFF</span>
+								<span class="line-through text-muted tabular-nums">R$ {plan.oldPrice}</span>
+								<span class="font-semibold text-heading tabular-nums ml-0.5">R$ {plan.price}</span>
+								<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[var(--color-nutrition-green)]/20 text-[var(--color-nutrition-green-dark)]">{plan.discountPercent}% OFF</span>
 								<span class="inline-flex items-center justify-center w-5 h-5 rounded bg-violet-100 text-violet-600" title="Presente">
 									<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"></polyline><rect x="2" y="7" width="20" height="5"></rect><line x1="12" y1="22" x2="12" y2="7"></line><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path></svg>
 								</span>
 							</p>
 						</div>
 						<div class="shrink-0 text-right">
-							<p class="text-2xl font-extrabold text-heading leading-none">R${plan.monthly}</p>
+							<p class="text-2xl font-extrabold text-heading leading-none tabular-nums">R$ {plan.monthly}</p>
 							<p class="text-[10px] text-muted">por mês</p>
 						</div>
 					</div>
@@ -105,6 +120,7 @@
 	<button
 		type="button"
 		disabled={!selectedPlan}
+		onclick={goToCheckout}
 		class="mt-4 w-full h-[60px] flex items-center justify-center rounded-2xl font-bold text-base transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none"
 		class:bg-[#E8E8ED]={!selectedPlan}
 		class:text-[#8e8e93]={!selectedPlan}
