@@ -1,7 +1,9 @@
 <script lang="ts">
+	import { get } from 'svelte/store';
 	import { FontAwesomeIcon } from '@fortawesome/svelte-fontawesome';
 	import { faWhatsapp } from '@fortawesome/free-brands-svg-icons';
 	import type { OfferPlan } from '$lib/data/offer-plans';
+	import { sessionStore } from '$lib/stores/session.store';
 	import { appendHotmartBuyerParams } from '$lib/utils/hotmart-checkout';
 
 	let {
@@ -41,10 +43,25 @@
 
 	function goToCheckout() {
 		if (!selectedCheckoutUrl) return;
-		const url = appendHotmartBuyerParams(selectedCheckoutUrl, {
-			fullName: checkoutFullName,
-			whatsapp: checkoutWhatsapp
-		});
+		const session = get(sessionStore);
+		const hasUtm = Object.values(session.utm).some((v) => Boolean(v && String(v).trim()));
+		const srcExtras =
+			session.offer != null && String(session.offer).trim() !== ''
+				? { of: String(session.offer).trim() }
+				: undefined;
+		const tracking =
+			hasUtm || srcExtras
+				? { utm: session.utm, ...(srcExtras ? { srcExtras } : {}) }
+				: undefined;
+
+		const url = appendHotmartBuyerParams(
+			selectedCheckoutUrl,
+			{
+				fullName: checkoutFullName,
+				whatsapp: checkoutWhatsapp
+			},
+			tracking
+		);
 		window.location.assign(url);
 	}
 </script>
