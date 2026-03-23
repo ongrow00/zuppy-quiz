@@ -9,11 +9,6 @@ const EMPTY: SessionParams = {
 	offer: null
 };
 
-function hasAnyParams(s: SessionParams): boolean {
-	const hasUtm = Object.keys(s.utm).length > 0;
-	return hasUtm || s.offer != null;
-}
-
 function loadFromSession(): SessionParams {
 	if (!browser) return { ...EMPTY };
 	try {
@@ -55,15 +50,25 @@ function createSessionStore() {
 		subscribe,
 
 		/**
-		 * Call from layout on client: fills store from URL only if nothing was in sessionStorage (first entry).
+		 * Mescla UTMs e `offer` da URL na sessão sempre que a URL trouxer esses parâmetros.
+		 * Assim links de campanha funcionam mesmo com sessionStorage antigo (antes bloqueava tudo).
 		 */
 		hydrateFromUrl(searchParams: URLSearchParams) {
+			const utmFromUrl = parseUtmFromSearchParams(searchParams);
+			const offerRaw = searchParams.get('offer');
+			const offerFromUrl =
+				offerRaw !== null ? (offerRaw.trim() || null) : null;
+
+			const hasUtmInUrl = Object.keys(utmFromUrl).length > 0;
+			const hasOfferInUrl = offerFromUrl != null;
+
+			if (!hasUtmInUrl && !hasOfferInUrl) return;
+
 			update((state) => {
-				if (hasAnyParams(state)) return state;
-				const utm = parseUtmFromSearchParams(searchParams);
-				const offer = searchParams.get('offer')?.trim() ?? null;
-				if (Object.keys(utm).length === 0 && offer == null) return state;
-				const next: SessionParams = { utm, offer };
+				const next: SessionParams = {
+					utm: hasUtmInUrl ? { ...state.utm, ...utmFromUrl } : state.utm,
+					offer: hasOfferInUrl ? offerFromUrl : state.offer
+				};
 				saveToSession(next);
 				return next;
 			});
