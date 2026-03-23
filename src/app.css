@@ -71,10 +71,6 @@ html {
 
 html,
 body {
-	height: 100%;
-	min-height: 100%;
-	/* Em celulares: limita à altura visível (evita conteúdo “sair” da tela com barra de endereço) */
-	max-height: 100dvh;
 	font-family: var(--font-sans);
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;

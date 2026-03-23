@@ -77,6 +77,7 @@
 	// Results usa window scroll — sem lock no body, sem div scroll container
 	$effect(() => {
 		if (!browser || !isResultsPage) return;
+
 		function onWindowScroll() {
 			showStickyBanner = window.scrollY >= RESULTS_BANNER_SCROLL_THRESHOLD;
 		}
@@ -104,7 +105,7 @@
 	<StickyDiscountBanner visible={showStickyBanner} discountCode={discountCode} />
 {/if}
 <div
-	class="{isResultsPage ? 'post-quiz-results-scroll flex flex-col' : 'h-full min-h-0 max-h-[100dvh] flex flex-col overflow-hidden'}"
+	class="{isResultsPage ? 'post-quiz-results-scroll flex flex-col' : 'h-dvh flex flex-col overflow-hidden'}"
 	bind:this={scrollContainer}
 	onscroll={onScroll}
 >
@@ -234,5 +235,9 @@
 	}
 	.content-transition-slot > * {
 		min-height: 100%;
+	}
+	/* Results usa window scroll: sem min-height forçado (causaria espaço vazio extra) */
+	.post-quiz-results-scroll .content-transition-slot > * {
+		min-height: unset;
 	}
 </style>

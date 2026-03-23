@@ -2,7 +2,7 @@
 	import { tick } from 'svelte';
 	import { get } from 'svelte/store';
 	import { fade } from 'svelte/transition';
-	import { goto, preloadData } from '$app/navigation';
+	import { goto } from '$app/navigation';
 	import { navigating } from '$app/state';
 	import {
 		quizStore,
@@ -343,7 +343,6 @@
 		} else if (nextId && typeof nextId === 'string') {
 			advancing = true;
 			try {
-				preloadData(`/plan/${nextId}`).catch(() => {});
 				quizStore.goTo(nextId);
 				await goto(`/plan/${nextId}`);
 			} finally {

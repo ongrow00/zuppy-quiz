@@ -187,7 +187,7 @@
 	<div class="border-t border-line px-4 pt-3 pb-4">
 		<p class="text-xs text-muted mb-3">Meta de macros</p>
 		<div class="flex justify-between gap-0">
-			{#each macros as macro}
+			{#each macros as macro, i (macro.label)}
 				<div class="flex min-w-0 flex-1 flex-col items-center gap-0">
 					<div
 						class="relative inline-block"
@@ -199,6 +199,12 @@
 						onkeydown={scrollToOffer ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); scrollToOffer(); } } : undefined}
 					>
 						<svg width="64" height="52" viewBox="0 0 64 64" fill="none" class="max-w-full block">
+						<defs>
+							<!-- Blur via SVG (feGaussianBlur): Safari/iOS ignora filter:blur() em <text> -->
+							<filter id="macro-gauge-blur-{i}" x="-40%" y="-40%" width="180%" height="180%">
+								<feGaussianBlur in="SourceGraphic" stdDeviation="1.15" />
+							</filter>
+						</defs>
 						<circle
 							cx={CX} cy={CY} r={R}
 							stroke="#E5E5EA"
@@ -225,6 +231,7 @@
 							font-size="11"
 							font-weight="700"
 							class="macro-gauge-value"
+							filter="url(#macro-gauge-blur-{i})"
 						>
 							{macro.grams}g
 						</text>
@@ -319,10 +326,9 @@
 		background-color: #f7f6f9;
 	}
 
-	/* Valor em gramas: leve blur + cinza (bloqueado) */
+	/* Valor em gramas: cinza (blur via filtro SVG feGaussianBlur no elemento <text>) */
 	.macro-gauge-value {
 		fill: #888;
-		filter: blur(1.35px);
 	}
 
 	/* Ícone da refeição: cinza escuro com 5% de opacidade */
