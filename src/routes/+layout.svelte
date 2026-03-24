@@ -7,6 +7,7 @@
 	import { sessionStore } from '$lib/stores/session.store';
 	import { initAnalytics } from '$lib/services/analytics.service';
 	import { initSupabase } from '$lib/services/supabase';
+	import { trackQuizLanded } from '$lib/services/analytics.service';
 
 	declare const fbq: (...args: unknown[]) => void;
 
@@ -17,9 +18,12 @@
 		initSupabase();
 	});
 
-	afterNavigate(() => {
+	afterNavigate(({ to }) => {
 		if (!browser) return;
 		fbq('track', 'ViewContent');
+		if (to?.url.pathname === '/') {
+			trackQuizLanded();
+		}
 	});
 
 	/** Sincroniza UTMs/offer com a URL em toda navegação (inclui primeira carga com ?utm_*=). */

@@ -3,7 +3,7 @@
 	import { goto } from '$app/navigation';
 	import type { AnimationItem } from 'lottie-web';
 	import { quizStore } from '$lib/stores/quiz.store';
-	import { trackQuizLanded, trackQuizStart } from '$lib/services/analytics.service';
+	import { trackQuizStart } from '$lib/services/analytics.service';
 	import Logo from '$lib/components/ui/Logo.svelte';
 	import SocialProof from '$lib/components/ui/SocialProof.svelte';
 	import { quizConfig } from '$lib/data/quiz.config';
@@ -25,7 +25,6 @@
 
 	onMount(() => {
 		updateShowFooter();
-		trackQuizLanded();
 		window.addEventListener('scroll', updateShowFooter, { passive: true });
 
 		let heroAnim: AnimationItem | null = null;
