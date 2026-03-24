@@ -71,11 +71,26 @@ export function trackPlanSelected(plan: string): void {
 	posthog.capture('plan_selected', { plan });
 }
 
+function sendBeaconToPostHog(eventName: string, plan: string): void {
+	const distinctId = posthog.get_distinct_id?.() ?? 'anonymous';
+	const payload = JSON.stringify({
+		api_key: 'phc_3rPOK6XJFPpjHVf2LcqLquRic7bErVVSe2vYPVeAsJM',
+		batch: [
+			{
+				event: eventName,
+				distinct_id: distinctId,
+				properties: { plan, $lib: 'web' },
+				timestamp: new Date().toISOString()
+			}
+		]
+	});
+	navigator.sendBeacon('https://us.i.posthog.com/batch/', new Blob([payload], { type: 'application/json' }));
+}
+
 export function trackCheckoutInitiated(plan: string, onDone: () => void): void {
 	if (!browser) { onDone(); return; }
-	let done = false;
-	const proceed = () => { if (!done) { done = true; onDone(); } };
-	setTimeout(proceed, 1500);
-	posthog.capture('checkout_initiated', {}, { send_instantly: true });
-	posthog.capture(`checkout_initiated_${plan}`, {}, { send_instantly: true, callback: proceed });
+	// sendBeacon garante entrega mesmo após redirect — sem delay, sem callback
+	sendBeaconToPostHog('checkout_initiated', plan);
+	sendBeaconToPostHog(`checkout_initiated_${plan}`, plan);
+	onDone();
 }
