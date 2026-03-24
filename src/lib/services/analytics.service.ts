@@ -1,9 +1,10 @@
 import { browser } from '$app/environment';
+import { PUBLIC_POSTHOG_KEY } from '$env/static/public';
 import posthog from 'posthog-js';
 
 export function initAnalytics(): void {
 	if (!browser) return;
-	posthog.init('phc_3rPOK6XJFPpjHVf2LcqLquRic7bErVVSe2vYPVeAsJM', {
+	posthog.init(PUBLIC_POSTHOG_KEY, {
 		api_host: 'https://us.i.posthog.com',
 		capture_pageview: false,
 		persistence: 'localStorage'
@@ -74,7 +75,7 @@ export function trackPlanSelected(plan: string): void {
 function sendBeaconToPostHog(eventName: string, plan: string): void {
 	const distinctId = posthog.get_distinct_id?.() ?? 'anonymous';
 	const payload = JSON.stringify({
-		api_key: 'phc_3rPOK6XJFPpjHVf2LcqLquRic7bErVVSe2vYPVeAsJM',
+		api_key: PUBLIC_POSTHOG_KEY,
 		batch: [
 			{
 				event: eventName,

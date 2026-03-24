@@ -109,7 +109,7 @@
 	<StickyDiscountBanner visible={showStickyBanner} discountCode={discountCode} />
 {/if}
 <div
-	class="{isResultsPage ? 'post-quiz-results-scroll flex flex-col' : 'h-dvh flex flex-col overflow-hidden'}"
+	class="{isResultsPage ? 'post-quiz-results-scroll flex w-full min-w-0 flex-col' : 'h-dvh flex flex-col overflow-hidden'}"
 	bind:this={scrollContainer}
 	onscroll={onScroll}
 >
@@ -167,7 +167,9 @@
 		{/if}
 	</header>
 
-	<main class="{isResultsPage ? 'flex flex-col' : 'flex-1 flex flex-col min-h-0 overflow-y-auto overflow-x-hidden no-scrollbar'}">
+	<main
+		class="{isResultsPage ? 'flex min-w-0 w-full flex-col' : 'flex-1 flex flex-col min-h-0 overflow-y-auto overflow-x-hidden no-scrollbar'}"
+	>
 		<div class="content-transition-root">
 			{#key pathname}
 				<div
@@ -237,17 +239,21 @@
 		grid-column: 1;
 		min-width: 0;
 		min-height: 0;
-		justify-self: center;
+		/* stretch: evita coluna estreita no Safari iOS com justify-self:center */
+		justify-self: stretch;
 		align-self: stretch;
+		width: 100%;
 	}
 	.content-transition-slot {
 		display: flex;
 		flex-direction: column;
 		align-items: stretch;
 		min-height: 0;
+		min-width: 0;
 		width: 100%;
-		max-width: 32rem;
+		max-width: min(32rem, 100%);
 		box-sizing: border-box;
+		margin-inline: auto;
 	}
 	.content-transition-slot > * {
 		min-height: 100%;
@@ -256,8 +262,8 @@
 	.post-quiz-results-scroll .content-transition-slot > * {
 		min-height: unset;
 	}
-	/* Impede overflow horizontal do fly transition no iOS */
+	/* Impede overflow horizontal (fly transition, carrosséis -mx-*) no iOS */
 	.post-quiz-results-scroll {
-		overflow-x: hidden;
+		overflow-x: clip;
 	}
 </style>
