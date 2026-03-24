@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { afterNavigate } from '$app/navigation';
 	import { browser } from '$app/environment';
 	import { page } from '$app/state';
 	import '../app.css';
@@ -7,11 +8,18 @@
 	import { initAnalytics } from '$lib/services/analytics.service';
 	import { initSupabase } from '$lib/services/supabase';
 
+	declare const fbq: (...args: unknown[]) => void;
+
 	let { children } = $props();
 
 	onMount(() => {
 		initAnalytics();
 		initSupabase();
+	});
+
+	afterNavigate(() => {
+		if (!browser) return;
+		fbq('track', 'ViewContent');
 	});
 
 	/** Sincroniza UTMs/offer com a URL em toda navegação (inclui primeira carga com ?utm_*=). */
