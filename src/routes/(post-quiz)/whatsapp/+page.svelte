@@ -205,7 +205,9 @@
 	const whatsapp = $derived($postQuizStore.whatsapp);
 
 	const whatsappTitle = $derived(
-		name.trim() ? `${name.trim()}, qual é o seu WhatsApp?` : 'Qual é o seu WhatsApp?'
+		name.trim()
+			? `${name.trim().split(/\s+/)[0]}, conecte seu número de WhatsApp à Zuppy.`
+			: 'Conecte seu número de WhatsApp à Zuppy.'
 	);
 
 	const objetivoLabel = $derived.by(() => {
@@ -300,7 +302,7 @@
 </script>
 
 <svelte:head>
-	<title>Qual é o seu WhatsApp? | Zuppy</title>
+	<title>Conecte seu WhatsApp | Zuppy</title>
 </svelte:head>
 
 <div class="flex flex-col gap-6">
@@ -390,5 +392,20 @@
 			</svg>
 			Seu número está seguro. Não enviamos propaganda.
 		</p>
+
+		<div class="flex flex-col items-center justify-center gap-2 pt-[25px]">
+			<img
+				src="/assets/whatsapp-business-verified.png"
+				alt="WhatsApp Business — conta verificada"
+				class="h-[34px] w-auto max-w-[132px] object-contain"
+				width="132"
+				height="34"
+				loading="lazy"
+				decoding="async"
+			/>
+			<p class="text-center text-xs text-muted leading-tight max-w-[260px]">
+				Zuppy é uma empresa verificada
+			</p>
+		</div>
 	</div>
 </div>

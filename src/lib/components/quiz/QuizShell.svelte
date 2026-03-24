@@ -163,13 +163,13 @@
 		return `Qual é a data de ${option.text}?`;
 	});
 
-	// whatsapp: address user by name (e.g. "Maria, qual é o seu WhatsApp?")
+	// whatsapp: address user by first name
 	const whatsappTitle = $derived.by(() => {
 		if (question?.id !== 'whatsapp') return undefined;
 		const name = quiz.answers['user_name'];
 		if (!name || typeof name !== 'string' || !name.trim()) return undefined;
 		const firstName = name.trim().split(/\s+/)[0] ?? name.trim();
-		return `${firstName}, qual é o seu WhatsApp?`;
+		return `${firstName}, conecte seu número de WhatsApp à Zuppy.`;
 	});
 
 	// gender: subtext with goal (e.g. "Isso muda seu plano de emagrecimento.")
