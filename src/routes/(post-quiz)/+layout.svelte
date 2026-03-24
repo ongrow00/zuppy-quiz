@@ -175,7 +175,7 @@
 				<div
 					in:fly={{ x: 30, duration: 260, delay: 40 }}
 					out:fly={{ x: -30, duration: 180 }}
-					class="content-transition-slot no-scrollbar max-w-lg mx-auto w-full px-4 {isResultsPage ? 'pt-2' : 'pt-4 overflow-y-auto overflow-x-hidden'} {isCarregandoPage || isResultsPage ? 'pb-2' : isNomePage || isWhatsappPage ? 'pb-32' : 'pb-8'}"
+					class="content-transition-slot no-scrollbar max-w-lg mx-auto w-full px-4 {isResultsPage ? 'items-center pt-2' : 'items-stretch pt-4 overflow-y-auto overflow-x-hidden'} {isCarregandoPage || isResultsPage ? 'pb-2' : isNomePage || isWhatsappPage ? 'pb-32' : 'pb-8'}"
 					style="pointer-events: auto;"
 				>
 					{@render children()}
@@ -232,6 +232,7 @@
 		flex: 1;
 		min-height: 0;
 		width: 100%;
+		overflow-x: hidden;
 		overflow-x: clip;
 	}
 	.content-transition-root > * {
@@ -247,7 +248,7 @@
 	.content-transition-slot {
 		display: flex;
 		flex-direction: column;
-		align-items: stretch;
+		/* align-items via Tailwind: stretch nas etapas; items-center em /results (evita coluna max-w-* colada à esquerda no Chrome/Safari) */
 		min-height: 0;
 		min-width: 0;
 		width: 100%;
@@ -264,6 +265,7 @@
 	}
 	/* Impede overflow horizontal (fly transition, carrosséis -mx-*) no iOS */
 	.post-quiz-results-scroll {
+		overflow-x: hidden;
 		overflow-x: clip;
 	}
 </style>

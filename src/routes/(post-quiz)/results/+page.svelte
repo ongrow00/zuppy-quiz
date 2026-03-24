@@ -274,7 +274,7 @@
 	<title>Seus Resultados | Zuppy</title>
 </svelte:head>
 
-<div class="flex flex-col items-center justify-center text-center pt-0 pb-8">
+<div class="flex w-full flex-col items-center justify-center text-center pt-0 pb-8">
 	<h1
 		class="max-w-[22rem] text-2xl font-extrabold leading-[24px] tracking-tight text-heading sm:max-w-md sm:text-[1.65rem]"
 	>
@@ -294,7 +294,7 @@
 	</p>
 </div>
 
-<div class="w-full max-w-sm mx-auto px-4 pb-4 results-content">
+<div class="w-full max-w-sm self-center px-4 pb-4 results-content">
 	<BodyBeforeAfterCard
 		currentStage={bodyCurrentStage}
 		goalStage={bodyGoalStage}
@@ -593,7 +593,7 @@
 				<div
 					bind:this={testimonialSliderEl}
 					onscroll={onTestimonialScroll}
-					class="flex overflow-x-auto gap-3 no-testimonial-scrollbar -mx-4 px-4"
+					class="flex overflow-x-auto gap-3 no-testimonial-scrollbar px-1"
 					style="scroll-snap-type: x mandatory;"
 				>
 					{#each testimonials as t, ti}
@@ -692,7 +692,7 @@
 				Simples, direto e tudo no WhatsApp. Sem baixar nada, já funciona no app que você usa todo dia.
 			</p>
 
-			<div class="relative -mx-4 app-carousel-fixed">
+			<div class="relative app-carousel-fixed">
 				<!-- Fade esquerda -->
 				<div class="absolute left-0 top-0 bottom-0 w-[14%] z-10 pointer-events-none" style="background: linear-gradient(to right, color-mix(in srgb, var(--color-bg) 60%, transparent), transparent);"></div>
 				<!-- Fade direita -->
