@@ -3,7 +3,7 @@ import { derived, get, writable } from 'svelte/store';
 import { quizConfig } from '$lib/data/quiz.config';
 import type { Answers, CategoryKey, Question, QuizState, Scores } from '$lib/data/types';
 import { computeVisibleQuestions } from '$lib/utils/branching';
-import { calculateScores, matchProfile } from '$lib/utils/scoring';
+import { calculateScores } from '$lib/utils/scoring';
 import { sessionStore } from '$lib/stores/session.store';
 import { createSession, completeSession } from '$lib/services/supabase';
 
@@ -94,8 +94,8 @@ function createQuizStore() {
 				const completedAt = Date.now();
 				const next = persist({ ...s, completedAt });
 				if (next.quizSessionId) {
-					const profile = matchProfile(next.scores, quizConfig.profiles);
-					completeSession(next.quizSessionId, completedAt, profile?.id ?? null);
+					const goal = (next.answers['goal_type'] as string) ?? null;
+					completeSession(next.quizSessionId, completedAt, goal);
 				}
 				return next;
 			});
