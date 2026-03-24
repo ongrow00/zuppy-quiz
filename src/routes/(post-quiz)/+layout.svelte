@@ -255,4 +255,8 @@
 	.post-quiz-results-scroll .content-transition-slot > * {
 		min-height: unset;
 	}
+	/* Impede overflow horizontal do fly transition no iOS */
+	.post-quiz-results-scroll {
+		overflow-x: hidden;
+	}
 </style>
