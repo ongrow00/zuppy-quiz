@@ -190,7 +190,7 @@
 			{#each macros as macro, i (macro.label)}
 				<div class="flex min-w-0 flex-1 flex-col items-center gap-0">
 					<div
-						class="relative inline-block"
+						class="relative inline-block rounded-xl border border-line bg-surface px-0.5 py-0.5"
 						class:cursor-pointer={!!scrollToOffer}
 						role={scrollToOffer ? 'button' : undefined}
 						tabindex={scrollToOffer ? 0 : undefined}
@@ -198,7 +198,7 @@
 						onclick={scrollToOffer}
 						onkeydown={scrollToOffer ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); scrollToOffer(); } } : undefined}
 					>
-						<svg width="64" height="52" viewBox="0 0 64 64" fill="none" class="max-w-full block">
+						<svg width="64" height="52" viewBox="0 0 64 64" fill="none" class="relative z-[1] max-w-full block">
 						<defs>
 							<!-- Blur via SVG (feGaussianBlur): Safari/iOS ignora filter:blur() em <text> -->
 							<filter id="macro-gauge-blur-{i}" x="-40%" y="-40%" width="180%" height="180%">
@@ -236,13 +236,13 @@
 							{macro.grams}g
 						</text>
 					</svg>
-						<div class="macro-gauge-lock absolute inset-0 flex items-center justify-center bg-surface {scrollToOffer ? '' : 'pointer-events-none'}">
+						<div class="macro-gauge-lock absolute inset-0 z-[2] flex items-center justify-center {scrollToOffer ? '' : 'pointer-events-none'}">
 							<span class="nutrition-fa nutrition-fa--sm text-heading opacity-90" aria-hidden="true">
 								<FontAwesomeIcon icon={faLock} />
 							</span>
 						</div>
 					</div>
-					<p class="text-[10px] text-muted text-center leading-tight">{macro.label}</p>
+					<p class="mt-[5px] text-[10px] text-muted text-center leading-tight">{macro.label}</p>
 				</div>
 			{/each}
 		</div>
