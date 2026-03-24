@@ -173,8 +173,8 @@
 		<div class="content-transition-root">
 			{#key pathname}
 				<div
-					in:fly={isResultsPage ? { y: 20, duration: 300, delay: 40 } : { x: 30, duration: 260, delay: 40 }}
-					out:fly={{ x: -30, duration: 180 }}
+					in:fly={{ y: 20, duration: 260, delay: 40 }}
+					out:fly={{ y: -12, duration: 180 }}
 					class="content-transition-slot no-scrollbar max-w-lg mx-auto w-full px-4 {isResultsPage ? 'items-center pt-2' : 'items-stretch pt-4 overflow-y-auto overflow-x-hidden'} {isCarregandoPage || isResultsPage ? 'pb-2' : isNomePage || isWhatsappPage || isPrevisaoPage ? 'pb-32' : 'pb-8'}"
 					style="pointer-events: auto;"
 				>
