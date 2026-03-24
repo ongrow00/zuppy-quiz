@@ -138,12 +138,4 @@
 			<span><span class="text-[var(--color-nutrition-green)] font-bold">Análise corporal</span> por <span class="text-[var(--color-nutrition-green)] font-bold">foto</span> com <span class="text-[var(--color-nutrition-green)] font-bold">recomendações</span> feitas para o seu corpo.</span>
 		</li>
 	</ul>
-
-	<button
-		type="button"
-		onclick={() => goto('/results')}
-		class="w-full h-[60px] mt-8 flex items-center justify-center rounded-2xl font-bold text-base bg-accent text-on-primary transition-all duration-200 active:scale-[0.98] hover:bg-accent-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
-	>
-		Continuar
-	</button>
 </div>
