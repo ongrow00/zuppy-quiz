@@ -236,7 +236,7 @@
 							{macro.grams}g
 						</text>
 					</svg>
-						<div class="macro-gauge-lock absolute inset-0 flex items-center justify-center {scrollToOffer ? '' : 'pointer-events-none'}">
+						<div class="macro-gauge-lock absolute inset-0 flex items-center justify-center bg-surface {scrollToOffer ? '' : 'pointer-events-none'}">
 							<span class="nutrition-fa nutrition-fa--sm text-heading opacity-90" aria-hidden="true">
 								<FontAwesomeIcon icon={faLock} />
 							</span>
@@ -259,7 +259,7 @@
 		>
 			{#each meals as meal}
 				<div
-					class="flex items-center gap-3 border border-line rounded-xl px-3 py-3 shrink-0"
+					class="flex items-center gap-3 border border-line rounded-xl bg-surface px-3 py-3 shrink-0"
 					class:cursor-pointer={!!scrollToOffer}
 					role={scrollToOffer ? 'button' : undefined}
 					tabindex={scrollToOffer ? 0 : undefined}
