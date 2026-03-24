@@ -18,9 +18,9 @@
 </script>
 
 {#if visible}
-	<div class="sticky-discount-banner fixed inset-x-0 top-0 z-50 px-4 pt-[env(safe-area-inset-top)]">
+	<div class="sticky-discount-banner fixed inset-x-0 top-0 z-50 pt-[env(safe-area-inset-top)]">
 		<div
-			class="mx-auto flex w-full max-w-lg items-center justify-between gap-4 rounded-b-[15px] bg-[#1a1a1a] px-4 py-3 text-white cursor-pointer select-none"
+			class="flex w-full max-w-full items-center justify-between gap-3 sm:gap-4 rounded-b-[15px] bg-[#1a1a1a] py-3 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] text-white cursor-pointer select-none"
 			role="button"
 			tabindex="0"
 			aria-label="Desconto aplicado. Clique para ir à oferta."

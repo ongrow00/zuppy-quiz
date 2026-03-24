@@ -274,7 +274,7 @@
 	<title>Seus Resultados | Zuppy</title>
 </svelte:head>
 
-<div class="flex w-full flex-col items-center justify-center text-center pt-0 pb-8">
+<div class="flex w-full min-w-0 flex-col items-center justify-center self-stretch text-center pt-0 pb-8">
 	<h1
 		class="max-w-[22rem] text-2xl font-extrabold leading-[24px] tracking-tight text-heading sm:max-w-md sm:text-[1.65rem]"
 	>
@@ -294,7 +294,7 @@
 	</p>
 </div>
 
-<div class="w-full max-w-sm self-center px-4 pb-4 results-content">
+<div class="results-content w-full min-w-0 max-w-sm mx-auto self-stretch pb-4">
 	<BodyBeforeAfterCard
 		currentStage={bodyCurrentStage}
 		goalStage={bodyGoalStage}

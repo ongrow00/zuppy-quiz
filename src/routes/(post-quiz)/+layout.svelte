@@ -173,9 +173,9 @@
 		<div class="content-transition-root">
 			{#key pathname}
 				<div
-					in:fly={{ y: 20, duration: 260, delay: 40 }}
-					out:fly={{ y: -12, duration: 180 }}
-					class="content-transition-slot no-scrollbar max-w-lg mx-auto w-full px-4 {isResultsPage ? 'items-center pt-2' : 'items-stretch pt-4 overflow-y-auto overflow-x-hidden'} {isCarregandoPage || isResultsPage ? 'pb-2' : isNomePage || isWhatsappPage || isPrevisaoPage ? 'pb-32' : 'pb-8'}"
+					in:fly={{ x: 30, duration: 260, delay: 40 }}
+					out:fly={{ x: -30, duration: 180 }}
+					class="content-transition-slot no-scrollbar max-w-lg mx-auto w-full min-w-0 px-4 {isResultsPage ? 'items-stretch pt-2' : 'items-stretch pt-4 overflow-y-auto overflow-x-hidden'} {isCarregandoPage || isResultsPage ? 'pb-2' : isNomePage || isWhatsappPage || isPrevisaoPage ? 'pb-32' : 'pb-8'}"
 					style="pointer-events: auto;"
 				>
 					{@render children()}
@@ -234,6 +234,9 @@
 		width: 100%;
 		overflow-x: hidden;
 		overflow-x: clip;
+		/* Safari: força compositing layer próprio, fazendo overflow clip funcionar
+		   corretamente com children que têm CSS transform (fly transition x:30) */
+		transform: translateZ(0);
 	}
 	.content-transition-root > * {
 		grid-row: 1;
@@ -248,7 +251,7 @@
 	.content-transition-slot {
 		display: flex;
 		flex-direction: column;
-		/* align-items via Tailwind: stretch nas etapas; items-center em /results (evita coluna max-w-* colada à esquerda no Chrome/Safari) */
+		/* items-stretch: filhos usam w-full/min-w-0 — evita coluna intrínseca estreita no Safari iOS */
 		min-height: 0;
 		min-width: 0;
 		width: 100%;

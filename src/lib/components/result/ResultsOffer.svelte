@@ -71,7 +71,7 @@
 	}
 </script>
 
-<div id={offerSectionId ?? undefined} class="offer {className}">
+<div id={offerSectionId ?? undefined} class="offer w-full min-w-0 {className}">
 	<!-- CTA header -->
 	<div class="mt-8 text-center">
 		<h2 class="text-2xl font-extrabold text-heading leading-none mb-3">
