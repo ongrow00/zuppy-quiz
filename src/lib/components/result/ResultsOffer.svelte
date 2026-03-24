@@ -46,7 +46,6 @@
 
 	function goToCheckout() {
 		if (!selectedCheckoutUrl) return;
-		trackCheckoutInitiated(selectedPlan);
 		const sessionId = get(quizStore).quizSessionId;
 		if (sessionId) savePlanSelected(sessionId, selectedPlan);
 		const session = get(sessionStore);
@@ -68,7 +67,7 @@
 			},
 			tracking
 		);
-		window.location.assign(url);
+		trackCheckoutInitiated(selectedPlan, () => window.location.assign(url));
 	}
 </script>
 

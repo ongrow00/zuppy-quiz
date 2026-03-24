@@ -71,8 +71,11 @@ export function trackPlanSelected(plan: string): void {
 	posthog.capture('plan_selected', { plan });
 }
 
-export function trackCheckoutInitiated(plan: string): void {
-	if (!browser) return;
-	posthog.capture('checkout_initiated');
-	posthog.capture(`checkout_initiated_${plan}`);
+export function trackCheckoutInitiated(plan: string, onDone: () => void): void {
+	if (!browser) { onDone(); return; }
+	let done = false;
+	const proceed = () => { if (!done) { done = true; onDone(); } };
+	setTimeout(proceed, 1500);
+	posthog.capture('checkout_initiated', {}, { send_instantly: true });
+	posthog.capture(`checkout_initiated_${plan}`, {}, { send_instantly: true, callback: proceed });
 }

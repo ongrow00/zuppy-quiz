@@ -23,6 +23,10 @@
 	import { BODY_FAT_LABELS } from '$lib/assets/body-fat-config';
 	import { getRemaining, formatCountdown, TOTAL_SECONDS } from '$lib/stores/discount-countdown.store';
 	import { OFFER_PLANS } from '$lib/data/offer-plans';
+	import { RESULT_TESTIMONIALS } from '$lib/data/results-testimonials';
+
+	/** Avatar único nos cards de depoimento (foto de perfil genérica). */
+	const testimonialProfileAvatarSrc = '/assets/testimonials/profile-avatar.png';
 
 	const quiz = $derived($quizStore);
 	const name = $derived(($postQuizStore.name || '').trim() || 'Você');
@@ -159,25 +163,15 @@
 		}
 	});
 
-	const ALL_TESTIMONIALS = [
-		{ user: 'ana_fitness',  prevKg: 98,  currKg: 75 },
-		{ user: 'marcos_s',     prevKg: 112, currKg: 89 },
-		{ user: 'julia_r',      prevKg: 78,  currKg: 61 },
-		{ user: 'roberto_m',    prevKg: 95,  currKg: 78 },
-		{ user: 'camila_t',     prevKg: 72,  currKg: 63 },
-		{ user: 'thiago_b',     prevKg: 88,  currKg: 76 },
-		{ user: 'patricia_m',   prevKg: 105, currKg: 87 },
-		{ user: 'gabriel_c',    prevKg: 130, currKg: 108 },
-	];
+	const testimonialGenderCode = $derived.by(() =>
+		gender === 'gender-m' ? 'H' : gender === 'gender-f' ? 'M' : null
+	);
+	const testimonialGoalCode = $derived(isMassGoal ? 'MG' : 'WL');
 	const testimonials = $derived.by(() => {
-		if (kgDelta == null || isMassGoal) return ALL_TESTIMONIALS.slice(0, 4);
-		return [...ALL_TESTIMONIALS]
-			.sort((a, b) => {
-				const da = Math.abs((a.prevKg - a.currKg) - kgDelta);
-				const db = Math.abs((b.prevKg - b.currKg) - kgDelta);
-				return da - db;
-			})
-			.slice(0, 4);
+		const g = testimonialGenderCode;
+		if (g == null) return [];
+		const goal = testimonialGoalCode;
+		return RESULT_TESTIMONIALS.filter((t) => t.gender === g && t.goal === goal);
 	});
 	const appScreens: { src: string; label: number }[] = [
 		{ src: '/assets/zuppy-screen-8.png', label: 8 },
@@ -250,15 +244,25 @@
 	let testimonialSliderEl = $state<HTMLDivElement | null>(null);
 	let activeTestimonial = $state(0);
 	function onTestimonialScroll() {
-		if (!testimonialSliderEl) return;
+		if (!testimonialSliderEl || testimonials.length === 0) return;
 		const cardW = testimonialSliderEl.scrollWidth / testimonials.length;
 		activeTestimonial = Math.round(testimonialSliderEl.scrollLeft / cardW);
 	}
 	function goToTestimonial(i: number) {
-		if (!testimonialSliderEl) return;
+		if (!testimonialSliderEl || testimonials.length === 0) return;
 		const cardW = testimonialSliderEl.scrollWidth / testimonials.length;
 		testimonialSliderEl.scrollTo({ left: i * cardW, behavior: 'smooth' });
 	}
+
+	$effect(() => {
+		if (testimonials.length === 0) {
+			activeTestimonial = 0;
+			return;
+		}
+		if (activeTestimonial >= testimonials.length) {
+			activeTestimonial = 0;
+		}
+	});
 
 	function scrollToOffer() {
 		if (typeof document === 'undefined') return;
@@ -583,65 +587,86 @@
 			</p>
 		</div>
 
-		<!-- Testimonial cards (Instagram-style) -->
-		<div class="mt-6 pb-4">
-			<div
-				bind:this={testimonialSliderEl}
-				onscroll={onTestimonialScroll}
-				class="flex overflow-x-auto gap-3 no-testimonial-scrollbar -mx-4 px-4"
-				style="scroll-snap-type: x mandatory;"
-			>
-				{#each testimonials as t, ti}
-					<div
-						class="bg-white rounded-2xl overflow-hidden shrink-0 shadow-sm"
-						style="width: calc(92% - 0.5rem); scroll-snap-align: start;"
-					>
-						<!-- Header: avatar ring + username -->
-						<div class="flex items-center gap-2.5 px-3 py-3">
-							<svg width="36" height="36" viewBox="0 0 36 36" class="shrink-0" aria-hidden="true">
-								<defs>
-									<linearGradient id="ig-ring-{ti}" x1="0%" y1="100%" x2="100%" y2="0%">
-										<stop offset="0%" stop-color="#f09433" />
-										<stop offset="40%" stop-color="#dc2743" />
-										<stop offset="100%" stop-color="#bc1888" />
-									</linearGradient>
-								</defs>
-								<circle cx="18" cy="18" r="16" fill="none" stroke="url(#ig-ring-{ti})" stroke-width="2.5" />
-								<circle cx="18" cy="18" r="12" fill="#D1D1D6" />
-							</svg>
-							<span class="text-sm font-medium text-heading truncate">{t.user}</span>
-						</div>
-
-						<!-- Image placeholder -->
-						<div class="w-full bg-[#AEAEB2] aspect-square"></div>
-
-						<!-- Stats -->
-						<div class="flex border-t border-line">
-							<div class="flex-1 px-3 py-3">
-								<p class="text-[10px] text-muted mb-0.5">Peso anterior</p>
-								<p class="text-sm font-bold text-heading">{t.prevKg}Kg</p>
+		<!-- Testimonial cards (Instagram-style) — fotos alinhadas ao sexo e objetivo do quiz -->
+		{#if testimonials.length > 0}
+			<div class="mt-6 pb-4">
+				<div
+					bind:this={testimonialSliderEl}
+					onscroll={onTestimonialScroll}
+					class="flex overflow-x-auto gap-3 no-testimonial-scrollbar -mx-4 px-4"
+					style="scroll-snap-type: x mandatory;"
+				>
+					{#each testimonials as t, ti}
+						<div
+							class="bg-white rounded-2xl overflow-hidden shrink-0 shadow-sm"
+							style="width: calc(92% - 0.5rem); scroll-snap-align: start;"
+						>
+							<!-- Header: avatar ring + username -->
+							<div class="flex items-center gap-2.5 px-3 py-3">
+								<svg width="36" height="36" viewBox="0 0 36 36" class="shrink-0" aria-hidden="true">
+									<defs>
+										<linearGradient id="ig-ring-{ti}" x1="0%" y1="100%" x2="100%" y2="0%">
+											<stop offset="0%" stop-color="#f09433" />
+											<stop offset="40%" stop-color="#dc2743" />
+											<stop offset="100%" stop-color="#bc1888" />
+										</linearGradient>
+										<clipPath id="testimonial-pfp-clip-{ti}">
+											<circle cx="18" cy="18" r="12" />
+										</clipPath>
+									</defs>
+									<circle cx="18" cy="18" r="16" fill="none" stroke="url(#ig-ring-{ti})" stroke-width="2.5" />
+									<image
+										href={testimonialProfileAvatarSrc}
+										x="6"
+										y="6"
+										width="24"
+										height="24"
+										preserveAspectRatio="xMidYMid slice"
+										clip-path={`url(#testimonial-pfp-clip-${ti})`}
+									/>
+								</svg>
+								<span class="text-sm font-medium text-heading truncate">@{t.user}</span>
 							</div>
-							<div class="w-px bg-line"></div>
-							<div class="flex-1 px-3 py-3">
-								<p class="text-[10px] text-muted mb-0.5">Peso atual</p>
-								<p class="text-sm font-bold text-heading">{t.currKg}Kg</p>
+
+							<div class="w-full bg-[#AEAEB2] aspect-square overflow-hidden">
+								<img
+									src={t.src}
+									alt={`Depoimento de @${t.user}, antes e depois`}
+									class="w-full h-full object-cover"
+									loading="lazy"
+									decoding="async"
+								/>
+							</div>
+
+							<!-- Stats -->
+							<div class="flex border-t border-line">
+								<div class="flex-1 px-3 py-3">
+									<p class="text-[10px] text-muted mb-0.5">Peso anterior</p>
+									<p class="text-sm font-bold text-heading">{t.prevKg} kg</p>
+								</div>
+								<div class="w-px bg-line"></div>
+								<div class="flex-1 px-3 py-3">
+									<p class="text-[10px] text-muted mb-0.5">Peso atual</p>
+									<p class="text-sm font-bold text-heading">{t.currKg} kg</p>
+								</div>
 							</div>
 						</div>
-					</div>
-				{/each}
-			</div>
+					{/each}
+				</div>
 
-			<!-- Dots -->
-			<div class="flex justify-center gap-1.5 mt-3">
-				{#each testimonials as _, i}
-					<button
-						onclick={() => goToTestimonial(i)}
-						aria-label="Ver depoimento {i + 1}"
-						class="rounded-full transition-all duration-200 {activeTestimonial === i ? 'w-2 h-2 bg-heading' : 'w-1.5 h-1.5 bg-[#D1D1D6]'}"
-					></button>
-				{/each}
+				<!-- Dots -->
+				<div class="flex justify-center gap-1.5 mt-3">
+					{#each testimonials as _, i}
+						<button
+							type="button"
+							onclick={() => goToTestimonial(i)}
+							aria-label="Ver depoimento {i + 1}"
+							class="rounded-full transition-all duration-200 {activeTestimonial === i ? 'w-2 h-2 bg-heading' : 'w-1.5 h-1.5 bg-[#D1D1D6]'}"
+						></button>
+					{/each}
+				</div>
 			</div>
-		</div>
+		{/if}
 
 		<ResultsOffer
 			bind:selectedPlan
