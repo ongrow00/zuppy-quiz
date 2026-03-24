@@ -2,6 +2,28 @@ import { browser } from '$app/environment';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { env } from '$env/dynamic/public';
 import type { Answers, Scores, UtmParams } from '$lib/data/types';
+import { quizConfig } from '$lib/data/quiz.config';
+
+function resolveLabels(answers: Answers): Record<string, string | string[]> {
+	const resolved: Record<string, string | string[]> = {};
+	for (const [questionId, value] of Object.entries(answers)) {
+		const question = quizConfig.questions.find((q) => q.id === questionId);
+		if (!question?.options) {
+			resolved[questionId] = value;
+			continue;
+		}
+		if (Array.isArray(value)) {
+			resolved[questionId] = value.map((v) => {
+				const opt = question.options!.find((o) => o.id === v);
+				return opt?.text ?? v;
+			});
+		} else {
+			const opt = question.options.find((o) => o.id === value);
+			resolved[questionId] = opt?.text ?? value;
+		}
+	}
+	return resolved;
+}
 
 let client: SupabaseClient | null = null;
 
@@ -49,7 +71,7 @@ export function updateAnswers(
 		.upsert(
 			{
 				session_id: sessionId,
-				answers,
+				answers: resolveLabels(answers),
 				scores,
 				last_question_id: lastQuestionId,
 				visited_questions: visitedQuestions
