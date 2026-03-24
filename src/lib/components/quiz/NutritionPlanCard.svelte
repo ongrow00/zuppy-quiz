@@ -255,7 +255,7 @@
 			bind:this={sliderEl}
 			onscroll={onSliderScroll}
 			class="flex overflow-x-auto gap-2 px-4 no-scrollbar"
-			style="scroll-snap-type: x mandatory;"
+			style="scroll-snap-type: x mandatory; touch-action: pan-x; overscroll-behavior-x: contain;"
 		>
 			{#each meals as meal}
 				<div
