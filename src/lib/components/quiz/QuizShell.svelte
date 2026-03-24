@@ -40,13 +40,17 @@
 	const genderKnown = $derived(
 		quiz.answers['gender'] === 'gender-m' || quiz.answers['gender'] === 'gender-f'
 	);
+	function normalizeGrammar(text: string): string {
+		// Ex.: "um. Casamento" -> "um, Casamento"
+		return text.replace(/\b([Uu]m)\.\s+/g, '$1, ');
+	}
 	function g(text: string): string {
-		if (!genderKnown) return text;
-		return text.replace(/o\(a\)/g, isMale ? 'o' : 'a');
+		const withGender = genderKnown ? text.replace(/o\(a\)/g, isMale ? 'o' : 'a') : text;
+		return normalizeGrammar(withGender);
 	}
 	// Genderized version of the current question (text, subtext, option texts/descriptions)
 	const gq = $derived.by(() => {
-		if (!question || !genderKnown) return question;
+		if (!question) return question;
 		return {
 			...question,
 			text: g(question.text),
@@ -160,7 +164,17 @@
 		const eventQuestion = quizConfig.questions.find((q) => q.id === 'event_type');
 		const option = eventQuestion?.options?.find((o) => o.id === eventTypeId);
 		if (!option) return undefined;
-		return `Qual é a data de ${option.text}?`;
+		const eventPrepositionById: Record<string, string> = {
+			'event-casamento': 'do casamento',
+			'event-viagem': 'da viagem',
+			'event-verao': 'do verão',
+			'event-aniversario': 'do aniversário',
+			'event-reencontro': 'do reencontro'
+		};
+		const eventPhrase =
+			eventPrepositionById[eventTypeId] ??
+			`de ${option.text.trim().toLowerCase()}`;
+		return `Qual é a data ${eventPhrase}?`;
 	});
 
 	// whatsapp: address user by first name
