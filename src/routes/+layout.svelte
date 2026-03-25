@@ -8,18 +8,18 @@
 	import { initSupabase } from '$lib/services/supabase';
 	import { trackQuizLanded } from '$lib/services/analytics.service';
 
-	declare const fbq: (...args: unknown[]) => void;
-
 	let { children } = $props();
 
 	onMount(() => {
 		initSupabase();
 	});
 
-	afterNavigate(({ to }) => {
+	afterNavigate(() => {
 		if (!browser) return;
-		fbq('track', 'ViewContent');
-		if (to?.url.pathname === '/') {
+		// fbq pode não existir (bloqueador / falha no script do Pixel); não pode quebrar o restante do callback.
+		const w = globalThis as typeof globalThis & { fbq?: (...args: unknown[]) => void };
+		w.fbq?.('track', 'ViewContent');
+		if (page.url.pathname === '/') {
 			trackQuizLanded();
 		}
 	});
