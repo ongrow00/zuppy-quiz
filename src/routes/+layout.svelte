@@ -14,12 +14,14 @@
 		initSupabase();
 	});
 
-	afterNavigate(() => {
+	afterNavigate((navigation) => {
 		if (!browser) return;
 		// fbq pode não existir (bloqueador / falha no script do Pixel); não pode quebrar o restante do callback.
 		const w = globalThis as typeof globalThis & { fbq?: (...args: unknown[]) => void };
 		w.fbq?.('track', 'ViewContent');
-		if (page.url.pathname === '/') {
+		// Na primeira carga (type "enter"), `page.url` às vezes ainda não bate com a URL real; `to` ou location cobre os dois casos.
+		const pathname = navigation.to?.url.pathname ?? window.location.pathname;
+		if (pathname === '/') {
 			trackQuizLanded();
 		}
 	});
