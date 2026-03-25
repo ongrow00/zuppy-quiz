@@ -11,7 +11,14 @@
 		nextQuestion,
 		quizNavigationEnded
 	} from '$lib/stores/quiz.store';
-	import { trackQuestionAnswer, trackQuizComplete, trackMr1Passed, trackMr2Passed, trackMr3Passed, trackMr4Passed } from '$lib/services/analytics.service';
+	import {
+		trackQuizAdvanced,
+		trackQuizComplete,
+		trackMr1Passed,
+		trackMr2Passed,
+		trackMr3Passed,
+		trackMr4Passed
+	} from '$lib/services/analytics.service';
 	import { updateAnswers } from '$lib/services/supabase';
 	import QuestionCard from './QuestionCard.svelte';
 	import InfoScreen from './InfoScreen.svelte';
@@ -308,7 +315,6 @@
 	function handleSelect(questionId: string, value: string | string[]) {
 		if (navigating.from != null || advancing) return;
 		quizStore.answer(questionId, value);
-		trackQuestionAnswer(questionId, value);
 		const state = get(quizStore);
 		if (state.quizSessionId) {
 			updateAnswers(state.quizSessionId, state.answers, state.scores, questionId, state.visitedQuestions);
@@ -370,6 +376,7 @@
 				advancing = false;
 			}
 		} else if (nextId && typeof nextId === 'string') {
+			trackQuizAdvanced(question?.id, nextId);
 			advancing = true;
 			try {
 				quizStore.goTo(nextId);

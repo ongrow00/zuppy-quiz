@@ -21,9 +21,16 @@ export function trackQuizStart(): void {
 	posthog.capture('quiz_started');
 }
 
-export function trackQuestionAnswer(questionId: string, optionId: string | string[]): void {
+/** Disparado ao avançar (Continuar / escolha única), não a cada interação (slider, digitação). */
+export function trackQuizAdvanced(
+	fromQuestionId: string | undefined,
+	toQuestionId: string
+): void {
 	if (!browser) return;
-	posthog.capture('question_answered', { question_id: questionId, value: optionId });
+	posthog.capture('quiz_advanced', {
+		from_question_id: fromQuestionId ?? null,
+		to_question_id: toQuestionId
+	});
 }
 
 export function trackMr1Passed(): void {
