@@ -3,7 +3,7 @@ import { PUBLIC_POSTHOG_KEY } from '$env/static/public';
 import posthog from 'posthog-js';
 
 export function initAnalytics(): void {
-	if (!browser) return;
+	if (!browser || !PUBLIC_POSTHOG_KEY) return;
 	posthog.init(PUBLIC_POSTHOG_KEY, {
 		api_host: 'https://us.i.posthog.com',
 		capture_pageview: false,
@@ -56,6 +56,11 @@ export function trackLeadName(): void {
 	posthog.capture('lead_name_submitted');
 }
 
+export function trackLeadSubmit(profileId: string): void {
+	if (!browser) return;
+	posthog.capture('lead_submitted', { profile_id: profileId });
+}
+
 export function trackLeadWhatsApp(whatsapp: string): void {
 	if (!browser) return;
 	posthog.identify(whatsapp);
@@ -73,14 +78,19 @@ export function trackPlanSelected(plan: string): void {
 }
 
 function sendBeaconToPostHog(eventName: string, plan: string): void {
+	if (!PUBLIC_POSTHOG_KEY) return;
 	const distinctId = posthog.get_distinct_id?.() ?? 'anonymous';
+	// /batch/ exige distinct_id dentro de properties (doc PostHog); senão o evento é descartado com 200.
 	const payload = JSON.stringify({
 		api_key: PUBLIC_POSTHOG_KEY,
 		batch: [
 			{
 				event: eventName,
-				distinct_id: distinctId,
-				properties: { plan, $lib: 'web' },
+				properties: {
+					distinct_id: distinctId,
+					plan,
+					$lib: 'web'
+				},
 				timestamp: new Date().toISOString()
 			}
 		]
@@ -94,4 +104,9 @@ export function trackCheckoutInitiated(plan: string, onDone: () => void): void {
 	sendBeaconToPostHog('checkout_initiated', plan);
 	sendBeaconToPostHog(`checkout_initiated_${plan}`, plan);
 	onDone();
+}
+
+// Eager init no cliente: roda ao importar o módulo, antes de afterNavigate (ex.: quiz_landed).
+if (browser) {
+	initAnalytics();
 }
