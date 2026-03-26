@@ -91,8 +91,8 @@
 					aria-hidden="true"
 				></div>
 				<div class="flex flex-col items-center gap-6 w-full">
-					<h1 class="text-2xl md:text-3xl font-normal text-heading leading-[21px] relative z-10">
-						Receba um <strong class="font-bold text-accent">plano de calorias</strong> criado <strong class="font-bold text-accent">milimetricamente</strong> para <strong class="font-bold text-accent">seu corpo</strong> nos <strong class="font-bold text-accent">próximos minutos</strong>.
+					<h1 class="text-2xl md:text-3xl font-normal text-heading leading-[1.1] relative z-10">
+						Receba um <strong class="font-bold text-accent">plano de calorias</strong> criado para <strong class="font-bold text-accent">seu corpo</strong> nos <strong class="font-bold text-accent">próximos minutos</strong>.
 					</h1>
 					<p class="text-sm text-body/80 leading-[14px]">
 						Responda algumas perguntas e descubra exatamente <strong class="font-bold text-accent">quanto e o que comer por dia</strong> para transformar seu corpo de <strong class="font-bold text-accent">acordo com seu biotipo</strong> sem abrir mão do que você gosta.
@@ -148,7 +148,7 @@
 	<button
 		type="button"
 		onclick={startQuiz}
-		class="cta-shimmer w-full h-16 rounded-full bg-accent transition-all duration-200 active:scale-[0.98] hover:bg-accent-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg relative overflow-hidden flex items-center justify-center px-6"
+		class="cta-shimmer w-full h-16 rounded-[16px] bg-accent transition-all duration-200 active:scale-[0.98] hover:bg-accent-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg relative overflow-hidden flex items-center justify-center px-6"
 	>
 		<span class="relative z-10 font-bold text-base text-on-primary">Iniciar Plano Grátis</span>
 	</button>

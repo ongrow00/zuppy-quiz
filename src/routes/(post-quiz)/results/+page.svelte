@@ -86,6 +86,16 @@
 		};
 		return map[eventType ?? ''] ?? 'evento';
 	});
+	const eventMention = $derived.by(() => {
+		const map: Record<string, string> = {
+			'event-casamento': 'um casamento',
+			'event-viagem': 'uma viagem',
+			'event-verao': 'o verão',
+			'event-aniversario': 'um aniversário',
+			'event-reencontro': 'um reencontro'
+		};
+		return map[eventType ?? ''] ?? 'um evento';
+	});
 	const eventDateFormatted = $derived.by(() => {
 		const raw = quiz.answers['event_date'];
 		const str = typeof raw === 'string' ? raw : Array.isArray(raw) ? raw[0] : null;
@@ -274,9 +284,9 @@
 	<title>Seus Resultados | Zuppy</title>
 </svelte:head>
 
-<div class="flex w-full min-w-0 flex-col items-center justify-center self-stretch text-center pt-0 pb-8">
+<div class="results-line-tight flex w-full min-w-0 flex-col items-center justify-center self-stretch text-center pt-0 pb-8">
 	<h1
-		class="max-w-[22rem] text-2xl font-extrabold leading-[24px] tracking-tight text-heading sm:max-w-md sm:text-[1.65rem]"
+		class="max-w-[22rem] text-2xl font-extrabold leading-[1.1] tracking-tight text-heading sm:max-w-md sm:text-[1.65rem]"
 	>
 		<span class="text-nutrition-green">{name}</span>, seu plano personalizado para <span class="text-nutrition-green">{actionVerb}</span>
 		{#if !isMassGoal}
@@ -294,7 +304,7 @@
 	</p>
 </div>
 
-<div class="results-content w-full min-w-0 max-w-sm mx-auto self-stretch pb-4">
+<div class="results-line-tight results-content w-full min-w-0 max-w-sm mx-auto self-stretch pb-4">
 	<BodyBeforeAfterCard
 		currentStage={bodyCurrentStage}
 		goalStage={bodyGoalStage}
@@ -537,7 +547,7 @@
 					</button>
 					<div class="min-w-0 flex-1 transition-opacity" class:opacity-50={!melhoriaEventOn}>
 						<p class="text-xs font-bold text-heading leading-none mb-1">Aceleradores para {eventLabel}</p>
-						<p class="text-xs text-muted leading-[12px]">Você tem <span class="text-nutrition-green font-bold">{eventLabel}</span> chegando. O Zuppy calculou exatamente o que precisa fazer para chegar bem no dia{#if eventDateFormatted}{' '}(<span class="text-nutrition-green font-bold">{eventDateFormatted}</span>){/if}.</p>
+						<p class="text-xs text-muted leading-[12px]">Você tem <span class="text-nutrition-green font-bold">{eventMention}</span> chegando. O Zuppy calculou exatamente o que precisa fazer para chegar bem no dia{#if eventDateFormatted}{' '}(<span class="text-nutrition-green font-bold">{eventDateFormatted}</span>){/if}.</p>
 					</div>
 				</div>
 				{/if}
@@ -810,6 +820,17 @@
 </div>
 
 <style>
+	.results-line-tight :global(h1),
+	.results-line-tight :global(h2),
+	.results-line-tight :global(h3),
+	.results-line-tight :global(p),
+	.results-line-tight :global(span),
+	.results-line-tight :global(a),
+	.results-line-tight :global(button),
+	.results-line-tight :global(li) {
+		line-height: 1.1 !important;
+	}
+
 	.results-fa {
 		display: inline-flex;
 		align-items: center;

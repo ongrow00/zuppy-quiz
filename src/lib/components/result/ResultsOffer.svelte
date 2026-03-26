@@ -121,9 +121,13 @@
 								class:text-heading={selectedPlan === plan.id}
 							>{plan.label}</p>
 							<p class="text-xs leading-none flex flex-wrap items-center gap-1.5">
-								<span class="line-through text-muted tabular-nums">R$ {plan.oldPrice}</span>
+								{#if plan.oldPrice > plan.price}
+									<span class="line-through text-muted tabular-nums">R$ {plan.oldPrice}</span>
+								{/if}
 								<span class="font-semibold text-heading tabular-nums ml-0.5">R$ {plan.price}</span>
-								<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[var(--color-nutrition-green)]/20 text-[var(--color-nutrition-green-dark)]">{plan.discountPercent}% OFF</span>
+								{#if plan.id !== 'mensal' && plan.discountPercent > 0}
+									<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[var(--color-nutrition-green)]/20 text-[var(--color-nutrition-green-dark)]">{plan.discountPercent}% OFF</span>
+								{/if}
 								<span class="inline-flex items-center justify-center w-5 h-5 rounded bg-violet-100 text-violet-600" title="Presente">
 									<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"></polyline><rect x="2" y="7" width="20" height="5"></rect><line x1="12" y1="22" x2="12" y2="7"></line><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path></svg>
 								</span>

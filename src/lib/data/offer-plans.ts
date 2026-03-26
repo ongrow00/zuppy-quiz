@@ -16,12 +16,12 @@ export const OFFER_PLANS: OfferPlan[] = [
 		id: 'mensal',
 		label: 'Plano Black - Mensal',
 		oldPrice: 29,
-		price: 17,
-		monthly: 17,
-		discountPercent: 41,
+		price: 29,
+		monthly: 29,
+		discountPercent: 0,
 		badge: null,
 		checkoutUrl:
-			'https://pay.hotmart.com/B104750630D?off=wlpc2j75&checkoutMode=10&offDiscount=PBM41'
+			'https://pay.hotmart.com/B104750630D?off=wlpc2j75&checkoutMode=10'
 	},
 	{
 		id: 'semestral',
