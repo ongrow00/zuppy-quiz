@@ -1,6 +1,10 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import AvatarStack from '$lib/components/ui/AvatarStack.svelte';
+	interface Props {
+		onClick?: () => void;
+	}
+	let { onClick }: Props = $props();
 
 	let count = $state(51);
 
@@ -23,6 +27,10 @@
 	});
 
 	onDestroy(() => clearTimeout(timeout));
+
+	function handleActivate() {
+		onClick?.();
+	}
 </script>
 
 <style>
@@ -45,6 +53,10 @@
 	.social-proof__wrapper {
 		position: relative;
 		padding: 2px;
+	}
+
+	.social-proof__wrapper--clickable {
+		cursor: pointer;
 	}
 
 	.social-proof__glow-border {
@@ -91,7 +103,20 @@
 </style>
 
 <div class="social-proof">
-	<div class="social-proof__wrapper">
+	<div
+		class="social-proof__wrapper {onClick ? 'social-proof__wrapper--clickable' : ''}"
+		role={onClick ? 'button' : undefined}
+		tabindex={onClick ? 0 : undefined}
+		onclick={onClick ? handleActivate : undefined}
+		onkeydown={onClick
+			? (e) => {
+					if (e.key === 'Enter' || e.key === ' ') {
+						e.preventDefault();
+						handleActivate();
+					}
+				}
+			: undefined}
+	>
 		<div class="social-proof__glow-border" aria-hidden="true"></div>
 		<div class="social-proof__card">
 			<AvatarStack variant="default" />

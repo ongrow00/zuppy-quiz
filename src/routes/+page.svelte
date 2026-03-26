@@ -98,7 +98,7 @@
 						Responda algumas perguntas e descubra exatamente <strong class="font-bold text-accent">quanto e o que comer por dia</strong> para transformar seu corpo de <strong class="font-bold text-accent">acordo com seu biotipo</strong> sem abrir mão do que você gosta.
 					</p>
 					<div class="flex justify-center">
-						<SocialProof />
+						<SocialProof onClick={startQuiz} />
 					</div>
 				</div>
 			</div>
