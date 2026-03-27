@@ -97,7 +97,7 @@
 										selected={false}
 										horizontal={true}
 										horizontalImageClass="object-contain"
-										optionTitleClass="font-bold text-[16px] leading-[1.1]"
+										optionTitleClass="font-bold text-[14px] md:text-[16px] leading-[1.1]"
 										onclick={handleGoalOptionClick}
 									/>
 								</GlowBorderFrame>
