@@ -12,6 +12,19 @@
 		const state = get(quizStore);
 		if (!state.startedAt) {
 			goto('/', { replaceState: true });
+			return;
+		}
+		if (!state.answers['goal_type']) {
+			goto('/', { replaceState: true });
+			return;
+		}
+		const visible = computeVisibleQuestions(quizConfig.questions, state.answers);
+		if (state.currentQuestionId && !visible.some((q) => q.id === state.currentQuestionId)) {
+			const first = visible[0];
+			if (first) {
+				quizStore.goTo(first.id);
+				goto(`/plan/${first.id}`, { replaceState: true });
+			}
 		}
 	});
 

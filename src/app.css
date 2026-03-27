@@ -167,20 +167,3 @@ p.text-base {
 	line-height: 14px;
 }
 
-/* Animação Lottie na home – sem “respiro” extra sob o SVG */
-.fitness-lottie-wrapper {
-	line-height: 0;
-}
-.fitness-lottie-wrapper svg {
-	display: block;
-	width: 100%;
-	height: 100%;
-	object-fit: contain;
-}
-/* Remove fundo branco do Lottie */
-.fitness-lottie-wrapper rect[fill="#ffffff"],
-.fitness-lottie-wrapper rect[fill="#fff"],
-.fitness-lottie-wrapper rect[fill="white"],
-.fitness-lottie-wrapper rect[width="750"][height="750"] {
-	fill: transparent !important;
-}

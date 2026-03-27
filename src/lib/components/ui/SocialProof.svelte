@@ -34,60 +34,16 @@
 </script>
 
 <style>
-	@property --border-angle {
-		syntax: '<angle>';
-		initial-value: 0deg;
-		inherits: false;
-	}
-
-	@keyframes border-spin {
-		to {
-			--border-angle: 360deg;
-		}
-	}
-
 	.social-proof {
 		display: inline-flex;
 	}
 
 	.social-proof__wrapper {
 		position: relative;
-		padding: 2px;
 	}
 
 	.social-proof__wrapper--clickable {
 		cursor: pointer;
-	}
-
-	.social-proof__glow-border {
-		position: absolute;
-		inset: 0;
-		border-radius: 9999px;
-		pointer-events: none;
-	}
-
-	.social-proof__glow-border::before {
-		content: '';
-		position: absolute;
-		inset: 0;
-		border-radius: 9999px;
-		padding: 2px;
-		background: conic-gradient(
-			from var(--border-angle),
-			transparent 0%,
-			transparent 75%,
-			rgba(100, 190, 20, 0.3) 82%,
-			#6ab820 87%,
-			#8ed33a 91%,
-			#b6e635 93%,
-			#8ed33a 95%,
-			#6ab820 97%,
-			transparent 100%
-		);
-		animation: border-spin 9s linear infinite;
-		-webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-		-webkit-mask-composite: xor;
-		mask-composite: exclude;
 	}
 
 	.social-proof__card {
@@ -98,7 +54,6 @@
 		border-radius: 9999px;
 		background: transparent;
 		position: relative;
-		border: 1px solid var(--color-line, #e8e8e8);
 	}
 </style>
 
@@ -117,7 +72,6 @@
 				}
 			: undefined}
 	>
-		<div class="social-proof__glow-border" aria-hidden="true"></div>
 		<div class="social-proof__card">
 			<AvatarStack variant="default" />
 			<p class="text-xs text-body leading-none text-left">

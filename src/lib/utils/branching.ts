@@ -54,8 +54,12 @@ export function isQuestionVisible(question: Question, answers: Answers): boolean
 	}
 }
 
+/** Objetivo é escolhido na home; a pergunta `goal_type` permanece no config para ramificações, mas não aparece no quiz. */
+const HOME_ONLY_QUESTION_IDS = new Set(['goal_type']);
+
 export function computeVisibleQuestions(questions: Question[], answers: Answers): Question[] {
 	return questions
+		.filter((q) => !HOME_ONLY_QUESTION_IDS.has(q.id))
 		.filter((q) => isQuestionVisible(q, answers))
 		.sort((a, b) => a.order - b.order || a.id.localeCompare(b.id));
 }

@@ -35,8 +35,18 @@ export function initSupabase(): void {
 	client = createClient(url, key);
 }
 
+/** Garante cliente após layout ou no primeiro uso (evita corrida: clique antes do onMount do layout). */
 function sb(): SupabaseClient | null {
+	if (!browser) return null;
+	if (!client) initSupabase();
 	return client;
+}
+
+function logSupabaseError(op: string, err: { message: string } | null): void {
+	if (!err) return;
+	if (import.meta.env.DEV) {
+		console.error(`[Supabase] ${op} failed:`, err.message, err);
+	}
 }
 
 export function createSession(
@@ -45,8 +55,17 @@ export function createSession(
 	utm: UtmParams,
 	offer: string | null
 ): void {
-	sb()
-		?.from('quiz_sessions')
+	const c = sb();
+	if (!c) {
+		if (import.meta.env.DEV) {
+			console.warn(
+				'[Supabase] createSession skipped: configure PUBLIC_SUPABASE_URL e PUBLIC_SUPABASE_ANON_KEY'
+			);
+		}
+		return;
+	}
+	void c
+		.from('quiz_sessions')
 		.upsert(
 			{
 				session_id: sessionId,
@@ -56,7 +75,7 @@ export function createSession(
 			},
 			{ onConflict: 'session_id' }
 		)
-		.then();
+		.then(({ error }) => logSupabaseError('createSession', error));
 }
 
 export function updateAnswers(
@@ -66,8 +85,10 @@ export function updateAnswers(
 	lastQuestionId: string,
 	visitedQuestions: string[]
 ): void {
-	sb()
-		?.from('quiz_sessions')
+	const c = sb();
+	if (!c) return;
+	void c
+		.from('quiz_sessions')
 		.upsert(
 			{
 				session_id: sessionId,
@@ -78,7 +99,7 @@ export function updateAnswers(
 			},
 			{ onConflict: 'session_id' }
 		)
-		.then();
+		.then(({ error }) => logSupabaseError('updateAnswers', error));
 }
 
 export function completeSession(
@@ -86,8 +107,10 @@ export function completeSession(
 	completedAt: number,
 	resultProfile: string | null
 ): void {
-	sb()
-		?.from('quiz_sessions')
+	const c = sb();
+	if (!c) return;
+	void c
+		.from('quiz_sessions')
 		.upsert(
 			{
 				session_id: sessionId,
@@ -96,22 +119,26 @@ export function completeSession(
 			},
 			{ onConflict: 'session_id' }
 		)
-		.then();
+		.then(({ error }) => logSupabaseError('completeSession', error));
 }
 
 export function updateLead(
 	sessionId: string,
 	data: { name?: string; whatsapp?: string; email?: string }
 ): void {
-	sb()
-		?.from('quiz_sessions')
+	const c = sb();
+	if (!c) return;
+	void c
+		.from('quiz_sessions')
 		.upsert({ session_id: sessionId, ...data }, { onConflict: 'session_id' })
-		.then();
+		.then(({ error }) => logSupabaseError('updateLead', error));
 }
 
 export function savePlanSelected(sessionId: string, planId: string): void {
-	sb()
-		?.from('quiz_sessions')
+	const c = sb();
+	if (!c) return;
+	void c
+		.from('quiz_sessions')
 		.upsert(
 			{
 				session_id: sessionId,
@@ -120,5 +147,5 @@ export function savePlanSelected(sessionId: string, planId: string): void {
 			},
 			{ onConflict: 'session_id' }
 		)
-		.then();
+		.then(({ error }) => logSupabaseError('savePlanSelected', error));
 }

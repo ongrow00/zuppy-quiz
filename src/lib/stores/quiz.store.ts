@@ -52,14 +52,20 @@ function createQuizStore() {
 	return {
 		subscribe,
 
-		start() {
-			const visible = computeVisibleQuestions(quizConfig.questions, {});
+		/** Objetivo vem da home; `goal_type` não entra na lista visível do quiz. */
+		start(goalTypeId: 'goal-emagrecer' | 'goal-massa') {
+			const answers: Answers = { goal_type: goalTypeId };
+			const newScores = calculateScores(answers, quizConfig.questions);
+			const visible = computeVisibleQuestions(quizConfig.questions, answers);
 			const firstQuestion = visible[0] ?? null;
 			const sessionId = browser ? crypto.randomUUID() : null;
 			const startedAt = Date.now();
 			update((s) =>
 				persist({
 					...INITIAL_STATE,
+					answers,
+					scores: newScores,
+					visitedQuestions: ['goal_type'],
 					currentQuestionId: firstQuestion?.id ?? null,
 					startedAt,
 					quizSessionId: sessionId

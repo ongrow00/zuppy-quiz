@@ -12,10 +12,25 @@
 		horizontal?: boolean;
 		/** Checkbox on top, text below (e.g. grid de dias) */
 		stacked?: boolean;
+		/** Classes extras na imagem do layout horizontal (ex.: object-contain para ilustrações) */
+		horizontalImageClass?: string;
+		/** Classes extras no título (layout imagem em cima, ex.: text-xl quando o pai usa zoom) */
+		optionTitleClass?: string;
 		onclick: (optionId: string) => void;
 	}
 
-	let { option, selected, type = 'single', disabled = false, minimal = false, horizontal = false, stacked = false, onclick }: Props = $props();
+	let {
+		option,
+		selected,
+		type = 'single',
+		disabled = false,
+		minimal = false,
+		horizontal = false,
+		stacked = false,
+		horizontalImageClass,
+		optionTitleClass,
+		onclick
+	}: Props = $props();
 
 	// Single = radio (circle only). Multiple = checkbox (square with check).
 	const isCheckbox = $derived(type === 'multiple');
@@ -51,9 +66,14 @@
 >
 	{#if imageOnTop}
 		<!-- Imagem 100% da largura, altura proporcional -->
-		<img src={option.imageUrl} alt="" class="w-full h-auto object-cover shrink-0" loading="lazy" />
+		<img
+			src={option.imageUrl}
+			alt=""
+			class="w-full h-auto shrink-0 {horizontalImageClass ?? 'object-cover'}"
+			loading="lazy"
+		/>
 		<div class="flex items-center justify-center gap-3 px-3 py-3 min-h-[48px] min-w-0 overflow-hidden">
-			<span class="font-medium leading-snug text-center break-words">{title}</span>
+			<span class="font-medium leading-snug text-center break-words {optionTitleClass ?? ''}">{title}</span>
 		</div>
 	{:else if stacked && isCheckbox}
 		<div class="flex flex-col items-center justify-center gap-2">

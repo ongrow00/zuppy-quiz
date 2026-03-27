@@ -11,6 +11,10 @@
 			goto('/', { replaceState: true });
 			return;
 		}
+		if (!state.answers['goal_type']) {
+			goto('/', { replaceState: true });
+			return;
+		}
 		const visible = computeVisibleQuestions(quizConfig.questions, state.answers);
 		const firstQuestion = visible[0];
 		if (firstQuestion) goto(`/plan/${firstQuestion.id}`, { replaceState: true });
