@@ -84,7 +84,7 @@
 					<h1 class="text-2xl md:text-3xl font-normal text-heading leading-[1.1] relative z-10">
 						Escolha seu objetivo e receba <strong class="font-bold text-accent">grátis</strong> um <strong class="font-bold text-accent">plano de calorias</strong> <strong class="font-bold text-accent">sob medida</strong> para <strong class="font-bold text-accent">o seu corpo</strong>.
 					</h1>
-					<p class="text-[16px] text-body/80 leading-normal">
+					<p class="text-[14px] text-body/80 leading-[1.1]">
 						Descubra exatamente quantas <strong class="font-bold text-heading">calorias</strong> você precisa para
 						emagrecer, ganhar massa e <strong class="font-bold text-heading">acelerar seu metabolismo</strong>.
 					</p>
@@ -97,7 +97,7 @@
 										selected={false}
 										horizontal={true}
 										horizontalImageClass="object-contain"
-										optionTitleClass="text-[20px]"
+										optionTitleClass="font-bold text-[16px] leading-[1.1]"
 										onclick={handleGoalOptionClick}
 									/>
 								</GlowBorderFrame>

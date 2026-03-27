@@ -73,7 +73,7 @@
 			loading="lazy"
 		/>
 		<div class="flex items-center justify-center gap-3 px-3 py-3 min-h-[48px] min-w-0 overflow-hidden">
-			<span class="font-medium leading-snug text-center break-words {optionTitleClass ?? ''}">{title}</span>
+			<span class="text-center break-words {optionTitleClass ?? 'font-medium leading-snug'}">{title}</span>
 		</div>
 	{:else if stacked && isCheckbox}
 		<div class="flex flex-col items-center justify-center gap-2">
