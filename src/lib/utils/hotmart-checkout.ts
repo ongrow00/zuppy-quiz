@@ -67,7 +67,7 @@ const UTM_KEYS = [
 	'utm_term'
 ] as const satisfies readonly (keyof UtmParams)[];
 
-/** Evita quebrar o formato v1|cod:val|… (Hotmart também desaconselha _). */
+/** Evita quebrar o formato v2|cod:val|… (Hotmart também desaconselha _). */
 export function sanitizeHotmartSrcValue(raw: string): string {
 	let s = raw.trim().replace(/_/g, '-').replace(/[|]/g, '-').replace(/:/g, '-');
 	if (s.length > SRC_MAX_VALUE_LEN) s = s.slice(0, SRC_MAX_VALUE_LEN);
@@ -80,25 +80,19 @@ function sanitizeSrcExtraCode(code: string): string {
 }
 
 /**
- * SRC compacto para a Hotmart: v1|us:…|md:…|ca:…|ct:…|tm:…|(+ extras).
+ * SRC para a Hotmart: v2|utm_source:…|utm_medium:…|…|utm_term:…|(+ extras, ex. offer).
+ * Prefixo v2 distingue do formato legado v1|us:|md:|…
  * Retorna null se não houver nada a enviar.
  */
-export function buildHotmartSrcV1(
+export function buildHotmartSrcV2(
 	utm: UtmParams,
 	extras?: Record<string, string>
 ): string | null {
 	const parts: string[] = [];
 
-	const codeMap: [keyof UtmParams, string][] = [
-		['utm_source', 'us'],
-		['utm_medium', 'md'],
-		['utm_campaign', 'ca'],
-		['utm_content', 'ct'],
-		['utm_term', 'tm']
-	];
-	for (const [utmKey, short] of codeMap) {
+	for (const utmKey of UTM_KEYS) {
 		const v = utm[utmKey]?.trim();
-		if (v) parts.push(`${short}:${sanitizeHotmartSrcValue(v)}`);
+		if (v) parts.push(`${utmKey}:${sanitizeHotmartSrcValue(v)}`);
 	}
 
 	if (extras) {
@@ -109,12 +103,12 @@ export function buildHotmartSrcV1(
 	}
 
 	if (parts.length === 0) return null;
-	return `v1|${parts.join('|')}`;
+	return `v2|${parts.join('|')}`;
 }
 
 export type HotmartCheckoutTracking = {
 	utm: UtmParams;
-	/** Pares adicionais no src (ex.: of = offer da sessão). */
+	/** Pares adicionais no src (ex.: offer = código da query ?offer=). */
 	srcExtras?: Record<string, string>;
 };
 
@@ -147,7 +141,7 @@ export function appendHotmartBuyerParams(
 			const v = utm[key]?.trim();
 			if (v) url.searchParams.set(key, v);
 		}
-		const src = buildHotmartSrcV1(utm, srcExtras);
+		const src = buildHotmartSrcV2(utm, srcExtras);
 		if (src) url.searchParams.set('src', src);
 	}
 

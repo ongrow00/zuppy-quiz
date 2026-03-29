@@ -52,7 +52,7 @@
 		const hasUtm = Object.values(session.utm).some((v) => Boolean(v && String(v).trim()));
 		const srcExtras =
 			session.offer != null && String(session.offer).trim() !== ''
-				? { of: String(session.offer).trim() }
+				? { offer: String(session.offer).trim() }
 				: undefined;
 		const tracking =
 			hasUtm || srcExtras
