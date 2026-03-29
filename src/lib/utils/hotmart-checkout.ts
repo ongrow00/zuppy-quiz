@@ -14,12 +14,20 @@ export type HotmartPhoneParts = {
 /**
  * Converte o WhatsApp salvo (DDI + nacional, só dígitos) em phoneac + phonenumber.
  * Foco em Brasil (+55) e EUA/Canadá (+1); heurísticas simples para PT e AR.
+ *
+ * **Brasil no checkout novo (pay.hotmart + país +55):** a Hotmart documenta
+ * `phoneac=DDD` + `phonenumber=número`, mas o formulário exibe **código do país**
+ * separado do restante. Nesse caso o pré-preenchimento costuma funcionar com
+ * `phoneac=55` (DDI) e `phonenumber` = DDD + assinante (10–11 dígitos), alinhado
+ * ao campo local após o +55.
+ *
+ * @see https://help.hotmart.com/pt-br/article/115003588572/como-configurar-meus-parametros-da-pagina-de-pagamento-
  */
 export function parsePhoneForHotmart(raw: string): HotmartPhoneParts | null {
 	const digits = raw.replace(/\D/g, '');
 	if (digits.length < 10) return null;
 
-	// Brasil: 55 + DDD (2) + 8 ou 9 dígitos
+	// Brasil: 55 + DDD (2) + 8 ou 9 dígitos → phoneac=55, phonenumber=nacional completo
 	if (digits.startsWith('55')) {
 		let national = digits.slice(2);
 		// Cola duplicada / dígitos a mais: mantém os últimos 11 (DDD + celular 9 dígitos)
@@ -27,7 +35,7 @@ export function parsePhoneForHotmart(raw: string): HotmartPhoneParts | null {
 			national = national.slice(-11);
 		}
 		if (national.length >= 10 && national.length <= 11) {
-			return { phoneac: national.slice(0, 2), phonenumber: national.slice(2) };
+			return { phoneac: '55', phonenumber: national };
 		}
 		return null;
 	}
@@ -38,9 +46,9 @@ export function parsePhoneForHotmart(raw: string): HotmartPhoneParts | null {
 		return { phoneac: national.slice(0, 3), phonenumber: national.slice(3) };
 	}
 
-	// Só número nacional brasileiro (sem DDI), ex. fluxo antigo
+	// Só número nacional brasileiro (sem DDI), ex. fluxo antigo — mesmo mapeamento país + nacional
 	if (digits.length >= 10 && digits.length <= 11) {
-		return { phoneac: digits.slice(0, 2), phonenumber: digits.slice(2) };
+		return { phoneac: '55', phonenumber: digits };
 	}
 
 	// Portugal +351
