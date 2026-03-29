@@ -76,9 +76,14 @@ const UTM_KEYS = [
 	'utm_term'
 ] as const satisfies readonly (keyof UtmParams)[];
 
-/** Evita quebrar o formato v2|cod:val|… (Hotmart também desaconselha _). */
+/** Evita quebrar o formato v3|cod=val|… (|, :, = no valor; Hotmart desaconselha _). */
 export function sanitizeHotmartSrcValue(raw: string): string {
-	let s = raw.trim().replace(/_/g, '-').replace(/[|]/g, '-').replace(/:/g, '-');
+	let s = raw
+		.trim()
+		.replace(/_/g, '-')
+		.replace(/[|]/g, '-')
+		.replace(/:/g, '-')
+		.replace(/=/g, '-');
 	if (s.length > SRC_MAX_VALUE_LEN) s = s.slice(0, SRC_MAX_VALUE_LEN);
 	return s;
 }
@@ -89,11 +94,12 @@ function sanitizeSrcExtraCode(code: string): string {
 }
 
 /**
- * SRC para a Hotmart: v2|utm_source:…|utm_medium:…|…|utm_term:…|(+ extras, ex. offer).
- * Prefixo v2 distingue do formato legado v1|us:|md:|…
+ * SRC para a Hotmart: v3|utm_source=…|utm_medium=…|…|utm_term=…|(+ extras, ex. offer=…).
+ * Usa `=` entre chave e valor (evita `:` na query); segmentos separados por `|`.
+ * v3 substitui v2 (v2 usava `:`); v1 era códigos curtos us/md/ca/…
  * Retorna null se não houver nada a enviar.
  */
-export function buildHotmartSrcV2(
+export function buildHotmartSrcV3(
 	utm: UtmParams,
 	extras?: Record<string, string>
 ): string | null {
@@ -101,18 +107,18 @@ export function buildHotmartSrcV2(
 
 	for (const utmKey of UTM_KEYS) {
 		const v = utm[utmKey]?.trim();
-		if (v) parts.push(`${utmKey}:${sanitizeHotmartSrcValue(v)}`);
+		if (v) parts.push(`${utmKey}=${sanitizeHotmartSrcValue(v)}`);
 	}
 
 	if (extras) {
 		for (const [k, v] of Object.entries(extras).sort(([a], [b]) => a.localeCompare(b))) {
 			const t = v?.trim();
-			if (t) parts.push(`${sanitizeSrcExtraCode(k)}:${sanitizeHotmartSrcValue(t)}`);
+			if (t) parts.push(`${sanitizeSrcExtraCode(k)}=${sanitizeHotmartSrcValue(t)}`);
 		}
 	}
 
 	if (parts.length === 0) return null;
-	return `v2|${parts.join('|')}`;
+	return `v3|${parts.join('|')}`;
 }
 
 export type HotmartCheckoutTracking = {
@@ -150,7 +156,7 @@ export function appendHotmartBuyerParams(
 			const v = utm[key]?.trim();
 			if (v) url.searchParams.set(key, v);
 		}
-		const src = buildHotmartSrcV2(utm, srcExtras);
+		const src = buildHotmartSrcV3(utm, srcExtras);
 		if (src) url.searchParams.set('src', src);
 	}
 
