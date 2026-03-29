@@ -21,7 +21,11 @@ export function parsePhoneForHotmart(raw: string): HotmartPhoneParts | null {
 
 	// Brasil: 55 + DDD (2) + 8 ou 9 dígitos
 	if (digits.startsWith('55')) {
-		const national = digits.slice(2);
+		let national = digits.slice(2);
+		// Cola duplicada / dígitos a mais: mantém os últimos 11 (DDD + celular 9 dígitos)
+		if (national.length > 11) {
+			national = national.slice(-11);
+		}
 		if (national.length >= 10 && national.length <= 11) {
 			return { phoneac: national.slice(0, 2), phonenumber: national.slice(2) };
 		}

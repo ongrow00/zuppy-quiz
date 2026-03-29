@@ -49,11 +49,13 @@
 	const headerCounter = $derived(POST_QUIZ_COUNTER_START + stepIndex + 1);
 
 	const hasValidName = $derived(($postQuizStore.name || '').trim().length > 0);
-	// WhatsApp obrigatório: só avança com telefone válido (10 ou 11 dígitos: DDD + número)
-	// Valida número internacional: total de dígitos >= 9 (código do país + número local mínimo)
-	const hasValidWhatsapp = $derived(
-		($postQuizStore.whatsapp || '').replace(/\D/g, '').length >= 9
-	);
+	/** BR (+55): mínimo 12 dígitos (55 + DDD + 8). Outros países: pelo menos 9 dígitos no total. */
+	const hasValidWhatsapp = $derived.by(() => {
+		const d = ($postQuizStore.whatsapp || '').replace(/\D/g, '');
+		if (d.length < 9) return false;
+		if (d.startsWith('55')) return d.length >= 12;
+		return true;
+	});
 	const canAdvance = $derived(
 		(!isNomePage || hasValidName) && (!isWhatsappPage || hasValidWhatsapp)
 	);

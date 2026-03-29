@@ -4,6 +4,7 @@
 	import { faWhatsapp } from '@fortawesome/free-brands-svg-icons';
 	import type { OfferPlan } from '$lib/data/offer-plans';
 	import { sessionStore } from '$lib/stores/session.store';
+	import { postQuizStore } from '$lib/stores/post-quiz.store';
 	import { quizStore } from '$lib/stores/quiz.store';
 	import { appendHotmartBuyerParams } from '$lib/utils/hotmart-checkout';
 	import { trackPlanSelected, trackCheckoutInitiated } from '$lib/services/analytics.service';
@@ -59,11 +60,16 @@
 				? { utm: session.utm, ...(srcExtras ? { srcExtras } : {}) }
 				: undefined;
 
+		// Lê na hora do clique (sessionStorage) — evita props defasadas no segundo bloco da página / reatividade.
+		const pq = get(postQuizStore);
+		const fullName = (pq.name || checkoutFullName || '').trim();
+		const whatsapp = (pq.whatsapp || checkoutWhatsapp || '').trim();
+
 		const url = appendHotmartBuyerParams(
 			selectedCheckoutUrl,
 			{
-				fullName: checkoutFullName,
-				whatsapp: checkoutWhatsapp
+				fullName,
+				whatsapp
 			},
 			tracking
 		);
