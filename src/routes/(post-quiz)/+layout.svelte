@@ -6,7 +6,6 @@
 	import StepProgressBar from '$lib/components/quiz/StepProgressBar.svelte';
 	import Logo from '$lib/components/ui/Logo.svelte';
 	import StickyDiscountBanner from '$lib/components/ui/StickyDiscountBanner.svelte';
-	import { start as startDiscountCountdown } from '$lib/stores/discount-countdown.store';
 	import { get } from 'svelte/store';
 	import { postQuizStore } from '$lib/stores/post-quiz.store';
 	import { quizStore } from '$lib/stores/quiz.store';
@@ -99,12 +98,6 @@
 		window.scrollTo(0, 0);
 	});
 
-	/** Countdown da oferta: inicia ao entrar na página de resultados e para ao sair. */
-	$effect(() => {
-		if (!browser) return;
-		const onResults = pathname === '/results' || pathname.startsWith('/results/');
-		if (onResults) return startDiscountCountdown();
-	});
 </script>
 
 {#if isResultsPage}

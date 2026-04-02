@@ -1,5 +1,7 @@
 <script lang="ts">
 	import type { Question } from '$lib/data/types';
+	import ArrowHorizontal from '$lib/components/ui/ArrowHorizontal.svelte';
+	import LottieSwipeRight from '$lib/components/ui/LottieSwipeRight.svelte';
 	import RulerPickerH from './RulerPickerH.svelte';
 
 	/** BMI saudável (OMS): 18,5–24,9 */
@@ -242,7 +244,17 @@
 		/>
 	</div>
 
-	<p class="text-xs text-muted text-center">{hint}</p>
+	<p
+		class="flex flex-wrap items-center justify-center gap-x-2 pt-[15px] text-[14px] text-muted text-center"
+	>
+		<ArrowHorizontal direction="left" />
+		<span class="font-bold text-heading">{hint}</span>
+		<ArrowHorizontal direction="right" />
+	</p>
+
+	<div class="flex w-full justify-center">
+		<LottieSwipeRight />
+	</div>
 
 	<!-- Legenda (só texto) — aparece quando há seleção de meta -->
 	{#if goalLegend && value !== undefined && value !== ''}

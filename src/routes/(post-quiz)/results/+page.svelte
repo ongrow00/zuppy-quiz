@@ -21,7 +21,6 @@
 	import ResultsOffer from '$lib/components/result/ResultsOffer.svelte';
 	import { calculateCalorieProfile, bodyFatPercentFromStage } from '$lib/utils/calories';
 	import { BODY_FAT_LABELS } from '$lib/assets/body-fat-config';
-	import { getRemaining, formatCountdown, TOTAL_SECONDS } from '$lib/stores/discount-countdown.store';
 	import { OFFER_PLANS } from '$lib/data/offer-plans';
 	import { RESULT_TESTIMONIALS } from '$lib/data/results-testimonials';
 
@@ -215,14 +214,6 @@
 	let activeAppSlide = $state(1);
 	let appSliderInitialScrollDone = false;
 
-	/** Cronômetro da oferta (mesmo do banner no topo). */
-	let countdownRemaining = $state(TOTAL_SECONDS);
-	$effect(() => {
-		const unsub = getRemaining().subscribe((v) => (countdownRemaining = v));
-		return unsub;
-	});
-	const countdownDisplay = $derived.by(() => formatCountdown(countdownRemaining));
-
 	/** Sempre abre o carrossel “Veja o Zuppy por dentro” no 2º slide */
 	$effect(() => {
 		if (!browser || !appSliderEl || appSliderInitialScrollDone || appScreens.length < 2) return;
@@ -326,8 +317,8 @@
 
 	<!-- Social proof -->
 	<div class="mt-4 flex items-center gap-3 border border-line rounded-full px-4 py-2.5">
-		<AvatarStack {initials} max={3} size="sm" variant="default" />
-		<p class="text-xs text-muted leading-tight">
+		<AvatarStack {initials} max={2} size="md" variant="large" />
+		<p class="text-[14px] text-muted leading-tight">
 			Mais de <span class="font-bold text-heading">15.000</span> pessoas já <span class="font-bold text-heading">emagreceram</span> enviando uma foto no <span class="font-bold text-heading">WhatsApp</span>.
 		</p>
 	</div>
@@ -357,7 +348,8 @@
 			{:else}
 				<span class="text-nutrition-green font-semibold">…kg</span>
 			{/if}
-			em um único lugar.
+			em um único lugar. Além do plano completo, você recebe <span class="font-bold">3 bônus</span> inclusos
+			<span class="font-bold">sem custo adicional</span>.
 		</p>
 
 		<div class="flex flex-col gap-4">
@@ -406,22 +398,28 @@
 
 			<!-- Item 3 -->
 			<div class="flex items-center gap-4">
-				<div class="feature-thumb shrink-0 flex flex-col items-start justify-end p-3">
-					<p class="text-[9px] text-muted mb-1">12:15 PM</p>
-					<p class="whitespace-nowrap text-[8px] font-bold text-heading leading-none inline-flex items-center gap-0.5">
-						<span class="results-fa results-fa--7 text-nutrition-green shrink-0" aria-hidden="true">
-							<FontAwesomeIcon icon={faFire} />
-						</span>
-						{Math.round(calorieProfile.caloriasMeta / mealCount)} kcal
-					</p>
+				<div class="feature-thumb shrink-0 flex min-h-[80px] flex-col gap-1 pb-3 pt-0">
+					<span
+						class="pointer-events-none m-0 w-full shrink-0 rounded-t-[14px] rounded-b-[4px] border-x border-t border-violet-200/90 bg-violet-100 py-0.5 text-center text-[8px] font-bold uppercase tracking-wide text-violet-600 shadow-sm"
+						aria-hidden="true"
+					>Bônus</span>
+					<div class="flex min-h-0 flex-1 flex-col items-start justify-end px-3">
+						<p class="text-[9px] text-muted mb-1">12:15 PM</p>
+						<p class="whitespace-nowrap text-[8px] font-bold text-heading leading-none inline-flex items-center gap-0.5">
+							<span class="results-fa results-fa--7 text-nutrition-green shrink-0" aria-hidden="true">
+								<FontAwesomeIcon icon={faFire} />
+							</span>
+							{Math.round(calorieProfile.caloriasMeta / mealCount)} kcal
+						</p>
+					</div>
 				</div>
 				<div>
 					<p class="text-sm font-bold text-heading mb-1 flex items-center gap-0.5 flex-wrap">
 						<span class="whitespace-nowrap">Cardápio diário para {actionVerb}</span>
+						<span class="text-xs font-semibold text-muted line-through tabular-nums">R$ 79</span>
 						<span class="inline-flex items-center justify-center w-5 h-5 rounded bg-violet-100 text-violet-600 shrink-0" title="Presente" aria-hidden="true">
 							<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"></polyline><rect x="2" y="7" width="20" height="5"></rect><line x1="12" y1="22" x2="12" y2="7"></line><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path></svg>
 						</span>
-						<span class="text-xs font-bold tabular-nums text-red-500 shrink-0">{countdownDisplay}</span>
 					</p>
 					<p class="text-xs text-muted leading-[12px]">Sugestões de refeições dentro da sua meta de <span class="text-nutrition-green font-bold">{calorieProfile.caloriasMeta.toLocaleString('pt-BR')} kcal</span> em <span class="text-nutrition-green font-bold">{mealCount} refeições</span> ao longo do dia. Você não precisa pensar, só seguir.</p>
 				</div>
@@ -429,27 +427,33 @@
 
 			<!-- Item 4 -->
 			<div class="flex items-center gap-4">
-				<div class="feature-thumb shrink-0 flex flex-col justify-end p-2">
-					<svg viewBox="0 0 80 40" class="w-full mb-1" fill="none">
-						<path
-							d="M4 9 L11 15 L17 11 L24 18 L30 13 L37 21 L43 16 L50 24 L56 19 L63 27 L69 22 L76 33"
-							stroke="#8ED33A"
-							stroke-width="2"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							fill="none"
-						/>
-					</svg>
-					<p class="text-[11px] font-bold text-heading leading-none">{BODY_FAT_LABELS[bodyGoalStage]}</p>
-					<p class="text-[8px] text-muted">% Gordura</p>
+				<div class="feature-thumb shrink-0 flex min-h-[80px] flex-col gap-1 pb-2 pt-0">
+					<span
+						class="pointer-events-none m-0 w-full shrink-0 rounded-t-[14px] rounded-b-[4px] border-x border-t border-violet-200/90 bg-violet-100 py-0.5 text-center text-[8px] font-bold uppercase tracking-wide text-violet-600 shadow-sm"
+						aria-hidden="true"
+					>Bônus</span>
+					<div class="flex min-h-0 flex-1 flex-col justify-end px-2">
+						<svg viewBox="0 0 80 40" class="mb-1 w-full" fill="none">
+							<path
+								d="M4 9 L11 15 L17 11 L24 18 L30 13 L37 21 L43 16 L50 24 L56 19 L63 27 L69 22 L76 33"
+								stroke="#8ED33A"
+								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								fill="none"
+							/>
+						</svg>
+						<p class="text-[11px] font-bold text-heading leading-none">{BODY_FAT_LABELS[bodyGoalStage]}</p>
+						<p class="text-[8px] text-muted">% Gordura</p>
+					</div>
 				</div>
 				<div>
 					<p class="text-sm font-bold text-heading mb-1 flex items-center gap-0.5 flex-wrap">
 						<span class="whitespace-nowrap">Análise corporal por foto</span>
+						<span class="text-xs font-semibold text-muted line-through tabular-nums">R$ 49</span>
 						<span class="inline-flex items-center justify-center w-5 h-5 rounded bg-violet-100 text-violet-600 shrink-0" title="Presente" aria-hidden="true">
 							<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"></polyline><rect x="2" y="7" width="20" height="5"></rect><line x1="12" y1="22" x2="12" y2="7"></line><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path></svg>
 						</span>
-						<span class="text-xs font-bold tabular-nums text-red-500 shrink-0">{countdownDisplay}</span>
 					</p>
 					<p class="text-xs text-muted leading-[12px]">Envie fotos e veja a mudança acontecendo em direção aos <span class="text-nutrition-green font-bold">{BODY_FAT_LABELS[bodyGoalStage]}</span> de gordura. Não só números na balança e receba dicas.</p>
 				</div>
@@ -480,19 +484,31 @@
 
 			<!-- Item 6 -->
 			<div class="flex items-center gap-4">
-				<div class="feature-thumb shrink-0 flex flex-col items-center justify-center p-3 text-center">
-					<p class="w-full text-center text-[12px] font-semibold text-heading leading-tight">Pizza</p>
-					<p
-						class="mt-1 flex w-full items-center justify-center gap-0.5 text-[7px] font-medium leading-none text-muted"
-					>
-						<span class="results-fa results-fa--6 shrink-0 text-nutrition-green" aria-hidden="true">
-							<FontAwesomeIcon icon={faFire} />
-						</span>
-						<span>480 kcal</span>
-					</p>
+				<div class="feature-thumb shrink-0 flex min-h-[80px] flex-col gap-1 pb-3 pt-0 text-center">
+					<span
+						class="pointer-events-none m-0 w-full shrink-0 rounded-t-[14px] rounded-b-[4px] border-x border-t border-violet-200/90 bg-violet-100 py-0.5 text-center text-[8px] font-bold uppercase tracking-wide text-violet-600 shadow-sm"
+						aria-hidden="true"
+					>Bônus</span>
+					<div class="flex min-h-0 flex-1 flex-col items-center justify-center px-3">
+						<p class="w-full text-center text-[12px] font-semibold text-heading leading-tight">Pizza</p>
+						<p
+							class="mt-1 flex w-full items-center justify-center gap-0.5 text-[7px] font-medium leading-none text-muted"
+						>
+							<span class="results-fa results-fa--6 shrink-0 text-nutrition-green" aria-hidden="true">
+								<FontAwesomeIcon icon={faFire} />
+							</span>
+							<span>480 kcal</span>
+						</p>
+					</div>
 				</div>
 				<div>
-					<p class="text-sm font-bold text-heading mb-1">Assistente de refeições</p>
+					<p class="text-sm font-bold text-heading mb-1 flex items-center gap-0.5 flex-wrap">
+						<span class="whitespace-nowrap">Assistente de refeições</span>
+						<span class="text-xs font-semibold text-muted line-through tabular-nums">R$ 19</span>
+						<span class="inline-flex items-center justify-center w-5 h-5 rounded bg-violet-100 text-violet-600 shrink-0" title="Presente" aria-hidden="true">
+							<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"></polyline><rect x="2" y="7" width="20" height="5"></rect><line x1="12" y1="22" x2="12" y2="7"></line><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path></svg>
+						</span>
+					</p>
 					<p class="text-xs text-muted leading-[12px]">Peça essa receita no seu WhatsApp, com base no que você tem em casa e nas calorias que ainda sobram no dia para você ficar em déficit calórico.</p>
 				</div>
 			</div>

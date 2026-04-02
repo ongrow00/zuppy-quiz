@@ -1,0 +1,18 @@
+-- =============================================================================
+-- Vault para o cron chamar a Edge Function (pg_cron + net.http_post)
+-- =============================================================================
+-- O job horário "sync-meta-insights-hourly" foi removido pela migration
+-- 20260331150000_remove_cron_sync_meta_insights_hourly.sql. A sync fica manual
+-- até você reagendar (SQL antigo em 20260330140000_cron_sync_meta_insights_hourly.sql).
+-- =============================================================================
+-- OBRIGATÓRIO — URL do projeto SEM barra no final:
+--
+-- select vault.create_secret('https://SEU_REF.supabase.co', 'sync_meta_project_url');
+--
+-- OPCIONAL — só se você configurou META_SYNC_CRON_SECRET na Edge Function.
+-- Valor deve ser exatamente: Bearer <o mesmo secret>
+--
+-- select vault.create_secret('Bearer SEU_META_SYNC_CRON_SECRET', 'meta_sync_insights_authorization');
+--
+-- Se NÃO usar META_SYNC_CRON_SECRET na função, NÃO crie meta_sync_insights_authorization:
+-- o cron envia só Content-Type: application/json (a função aceita sem Authorization).

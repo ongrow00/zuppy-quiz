@@ -1,0 +1,6 @@
+# Configuração do Supabase CLI (link com projeto: supabase link).
+# Documentação: https://supabase.com/docs/guides/cli/config
+
+[functions.sync-meta-insights]
+# verify_jwt false: cron pode chamar sem JWT; META_SYNC_CRON_SECRET (opcional) exige Bearer.
+verify_jwt = false

@@ -28,7 +28,7 @@ export const OFFER_PLANS: OfferPlan[] = [
 		label: 'Plano Black - Semestral',
 		oldPrice: 109,
 		price: 59,
-		monthly: 11,
+		monthly: 11.07,
 		discountPercent: 45,
 		badge: 'Mais Vendido',
 		checkoutUrl:
@@ -39,7 +39,7 @@ export const OFFER_PLANS: OfferPlan[] = [
 		label: 'Plano Black - Anual',
 		oldPrice: 179,
 		price: 89,
-		monthly: 9,
+		monthly: 9.2,
 		discountPercent: 50,
 		badge: null,
 		checkoutUrl:

@@ -1,5 +1,7 @@
 <script lang="ts">
 	import type { Question } from '$lib/data/types';
+	import ArrowHorizontal from '$lib/components/ui/ArrowHorizontal.svelte';
+	import LottieSwipeRight from '$lib/components/ui/LottieSwipeRight.svelte';
 	import RulerPicker from './RulerPicker.svelte';
 	import RulerPickerH from './RulerPickerH.svelte';
 
@@ -14,7 +16,7 @@
 	const isHeight = $derived(question.unit === 'cm');
 	const isWeight = $derived(question.unit === 'kg');
 	const isAge = $derived(question.unit === 'anos');
-	const isHorizontal = $derived(isWeight || isAge);
+	const isHorizontal = $derived(isWeight || isAge || isHeight);
 
 	const baseDefault = $derived(
 		isHeight ? 170 : isWeight ? 70 : isAge ? 25 : question.min ?? 30
@@ -87,5 +89,17 @@
 		{/if}
 	</div>
 
-	<p class="text-xs text-muted text-center">{hint}</p>
+	<p
+		class="flex flex-wrap items-center justify-center gap-x-2 pt-[15px] text-[14px] text-muted text-center"
+	>
+		<ArrowHorizontal direction="left" />
+		<span class="font-bold text-heading">{hint}</span>
+		<ArrowHorizontal direction="right" />
+	</p>
+
+	{#if isHorizontal}
+		<div class="flex w-full justify-center">
+			<LottieSwipeRight />
+		</div>
+	{/if}
 </div>

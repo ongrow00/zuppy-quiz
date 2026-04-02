@@ -80,14 +80,13 @@
 	>
 		<div class="flex-1 flex flex-col justify-center w-full max-w-lg">
 			<div class="text-center flex flex-col items-center gap-1">
-				<div class="flex flex-col items-center gap-6 w-full">
-					<h1 class="text-2xl md:text-3xl font-normal text-heading leading-[1.1] relative z-10">
-						Escolha seu objetivo e receba <strong class="font-bold text-accent">grátis</strong> um <strong class="font-bold text-accent">plano de calorias</strong> <strong class="font-bold text-accent">sob medida</strong> para <strong class="font-bold text-accent">o seu corpo</strong>.
-					</h1>
+				<div class="flex flex-col items-center gap-[5px] w-full">
 					<p class="text-[14px] text-body/80 leading-[1.1]">
-						Descubra exatamente quantas <strong class="font-bold text-heading">calorias</strong> você precisa para
-						emagrecer, ganhar massa e <strong class="font-bold text-heading">acelerar seu metabolismo</strong>.
+						Para iniciar, selecione um objetivo.
 					</p>
+					<h1 class="text-2xl md:text-3xl font-normal text-heading leading-[1.1] relative z-10 mb-[25px]">
+						Qual é o seu <strong class="font-bold text-accent">principal objetivo</strong>?
+					</h1>
 					<div class="flex flex-row gap-2 w-full max-w-lg mx-auto [zoom:0.8]">
 						{#each goalHomeOptions as option, i (option.id)}
 							<div class="option-cascade flex-1 min-w-0" style="animation-delay: {80 + i * 55}ms">
@@ -104,18 +103,20 @@
 							</div>
 						{/each}
 					</div>
-					<div class="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 w-full">
-						<p class="flex items-center gap-1.5 text-[12px] text-muted">
+					<div class="flex flex-col items-center justify-center gap-y-[10px] w-full mt-[15px]">
+						<span
+							class="inline-flex items-center gap-1.5 text-[14px] font-bold text-nutrition-green-dark rounded-[5px] border border-nutrition-green/35 bg-nutrition-green/20 px-2.5 py-1"
+						>
+							<svg class="w-3 h-3 shrink-0 text-nutrition-green-dark" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+								<path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+							</svg>
+							Limitado a 1 por pessoa
+						</span>
+						<p class="flex items-center gap-1.5 text-[14px] text-muted">
 							<svg class="w-3 h-3 shrink-0 text-muted" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
 								<path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z" />
 							</svg>
 							100% seguro
-						</p>
-						<p class="flex items-center gap-1.5 text-[12px] text-muted">
-							<svg class="w-3 h-3 shrink-0 text-muted" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-								<path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-							</svg>
-							Limitado a 1 por pessoa
 						</p>
 					</div>
 				</div>

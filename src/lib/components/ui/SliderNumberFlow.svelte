@@ -1,4 +1,7 @@
 <script lang="ts">
+	import ArrowHorizontal from '$lib/components/ui/ArrowHorizontal.svelte';
+	import LottieSwipeRight from '$lib/components/ui/LottieSwipeRight.svelte';
+
 	interface Props {
 		/** Current value (single value for single thumb) */
 		value: number;
@@ -25,6 +28,7 @@
 	}: Props = $props();
 
 	const displayText = $derived(displayValue ?? String(value));
+	const hint = 'Arraste para ajustar';
 	const valuePercent = $derived((max - min) <= 0 ? 0 : ((value - min) / (max - min)) * 100);
 
 	/** Build an array of step dot positions when steps are discrete and few enough to show */
@@ -110,8 +114,17 @@
 		</div>
 	</div>
 
-	<!-- Hint text -->
-	<p class="text-center text-xs text-muted mt-8">Arraste para selecionar</p>
+	<!-- Hint (mesmo padrão peso / altura / idade) -->
+	<p
+		class="flex flex-wrap items-center justify-center gap-x-2 pt-[15px] mt-8 text-[14px] text-muted text-center"
+	>
+		<ArrowHorizontal direction="left" />
+		<span class="font-bold text-heading">{hint}</span>
+		<ArrowHorizontal direction="right" />
+	</p>
+	<div class="flex w-full justify-center">
+		<LottieSwipeRight />
+	</div>
 </div>
 
 <style>

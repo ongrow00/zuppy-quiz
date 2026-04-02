@@ -75,6 +75,16 @@
 		);
 		trackCheckoutInitiated(selectedPlan, () => window.location.assign(url));
 	}
+
+	function monthlyPriceParts(value: number): { integer: string; fraction: string } {
+		const centsTotal = Math.round(value * 100);
+		const intPart = Math.floor(centsTotal / 100);
+		const centDigits = centsTotal % 100;
+		return {
+			integer: intPart.toLocaleString('pt-BR'),
+			fraction: `,${centDigits.toString().padStart(2, '0')}`
+		};
+	}
 </script>
 
 <div id={offerSectionId ?? undefined} class="offer w-full min-w-0 {className}">
@@ -94,6 +104,7 @@
 
 		<div class="flex flex-col gap-3">
 			{#each plans as plan}
+				{@const parts = monthlyPriceParts(plan.monthly)}
 				<button
 					type="button"
 					onclick={() => { selectedPlan = plan.id; trackPlanSelected(plan.id); }}
@@ -140,7 +151,15 @@
 							</p>
 						</div>
 						<div class="shrink-0 text-right">
-							<p class="text-2xl font-extrabold text-heading leading-none tabular-nums">R$ {plan.monthly}</p>
+							<p
+								class="m-0 flex flex-wrap justify-end items-baseline gap-0 font-extrabold text-heading tabular-nums leading-none"
+							>
+								<span class="text-2xl leading-none">R$&nbsp;</span>
+								<span class="inline-flex items-start gap-0.5">
+									<span class="text-2xl leading-none tabular-nums">{parts.integer}</span>
+									<span class="text-[11px] leading-none tabular-nums">{parts.fraction}</span>
+								</span>
+							</p>
 							<p class="text-[10px] text-muted">por mês</p>
 						</div>
 					</div>
@@ -172,7 +191,7 @@
 		<span class="relative z-10">Ativar Meu Plano Agora</span>
 	</button>
 
-	<p class="mt-2 flex items-center justify-center gap-1.5 text-xs text-muted">
+	<p class="mt-2 flex items-center justify-center gap-1.5 text-xs font-bold text-muted">
 		<span class="offer-fa-wa inline-flex shrink-0 items-center justify-center text-green-500" aria-hidden="true">
 			<FontAwesomeIcon icon={faWhatsapp} />
 		</span>
